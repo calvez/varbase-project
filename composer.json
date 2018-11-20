@@ -46,9 +46,45 @@
   "conflict": {
     "drupal/drupal": "*"
   },
+  "scripts": {
+    "varbase-handle-tags": "Varbase\\composer\\VarbaseUpdate::handleTags",
+    "varbase-composer-generate": "Varbase\\composer\\VarbaseUpdate::generate",
+    "drupal-scaffold": "DrupalComposer\\DrupalScaffold\\Plugin::scaffold",
+    "pre-install-cmd": ["Varbase\\composer\\ScriptHandler::checkComposerVersion"],
+    "pre-update-cmd": ["Varbase\\composer\\ScriptHandler::checkComposerVersion"],
+    "post-install-cmd": [
+      "Varbase\\composer\\ScriptHandler::createRequiredFiles",
+      "Varbase\\composer\\ScriptHandler::removeGitDirectories",
+      "@composer drupal-scaffold",
+      "./bin/phing push"
+    ],
+    "post-update-cmd": [
+      "Varbase\\composer\\ScriptHandler::createRequiredFiles",
+      "Varbase\\composer\\ScriptHandler::removeGitDirectories",
+      "./bin/phing push"
+    ],
+    "post-drupal-scaffold-cmd": ["Varbase\\composer\\ScriptHandler::postDrupalScaffoldProcedure"],
+    "create-new-vartheme": "scripts/create-new-vartheme.sh"
+  },
   "extra": {
     "branch-alias": {
       "dev-8.x-6.x-update": "8.6.x-update-dev"
+    },
+    "installer-paths": {
+      "docroot/core": ["drupal/core"],
+      "docroot/profiles/{$name}": ["type:drupal-profile"],
+      "docroot/modules/contrib/{$name}": ["type:drupal-module"],
+      "docroot/themes/contrib/{$name}": ["type:drupal-theme"],
+      "docroot/libraries/slick": ["npm-asset/slick-carousel"],
+      "docroot/libraries/ace": ["npm-asset/ace-builds"],
+      "docroot/libraries/{$name}": [
+        "type:drupal-library",
+        "type:bower-asset",
+        "type:npm-asset"
+      ],
+      "docroot/modules/custom/{$name}": ["type:drupal-custom-module"],
+      "docroot/themes/custom/{$name}": ["type:drupal-custom-theme"],
+      "drush/contrib/{$name}": ["type:drupal-drush"]
     }
   }
 }
