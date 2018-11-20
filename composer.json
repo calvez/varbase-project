@@ -31,7 +31,7 @@
   "require": {
     "webflo/drupal-finder": "^1.1.0",
     "webmozart/path-util": "^2.3.0",
-    "vardot/varbase": "8.6.x-update-dev"
+    "vardot/varbase": "dev-8.x-6.x-update"
   },
   "config": {
     "bin-dir": "bin/",
