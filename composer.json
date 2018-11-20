@@ -49,6 +49,6 @@
   "extra": {
     "branch-alias": {
       "dev-8.x-6.x-update": "8.6.x-update-dev"
-    },
+    }
   }
 }
