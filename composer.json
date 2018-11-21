@@ -50,18 +50,26 @@
     "varbase-handle-tags": "Varbase\\composer\\VarbaseUpdate::handleTags",
     "varbase-composer-generate": "Varbase\\composer\\VarbaseUpdate::generate",
     "drupal-scaffold": "DrupalComposer\\DrupalScaffold\\Plugin::scaffold",
+    "pre-install-cmd": ["Varbase\\composer\\ScriptHandler::checkComposerVersion"],
+    "pre-update-cmd": ["Varbase\\composer\\ScriptHandler::checkComposerVersion"],
     "post-install-cmd": [
       "Varbase\\composer\\ScriptHandler::createRequiredFiles",
+      "Varbase\\composer\\VarbaseUpdate::handleTags",
       "Varbase\\composer\\ScriptHandler::removeGitDirectories",
-      "@composer drupal-scaffold"
+      "@composer drupal-scaffold",
+      "./bin/phing push"
     ],
     "post-update-cmd": [
       "Varbase\\composer\\ScriptHandler::createRequiredFiles",
-      "Varbase\\composer\\ScriptHandler::removeGitDirectories"
+      "Varbase\\composer\\VarbaseUpdate::handleTags",
+      "Varbase\\composer\\ScriptHandler::removeGitDirectories",
+      "./bin/phing push"
     ],
-    "post-drupal-scaffold-cmd": ["Varbase\\composer\\ScriptHandler::postDrupalScaffoldProcedure"]
+    "post-drupal-scaffold-cmd": ["Varbase\\composer\\ScriptHandler::postDrupalScaffoldProcedure"],
+    "create-new-vartheme": "scripts/create-new-vartheme.sh"
   },
   "extra": {
+    "install-path": "docroot",
     "branch-alias": {
       "dev-8.x-6.x-update": "8.6.x-update-dev"
     },
