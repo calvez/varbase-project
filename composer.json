@@ -50,21 +50,16 @@
     "varbase-handle-tags": "Varbase\\composer\\VarbaseUpdate::handleTags",
     "varbase-composer-generate": "Varbase\\composer\\VarbaseUpdate::generate",
     "drupal-scaffold": "DrupalComposer\\DrupalScaffold\\Plugin::scaffold",
-    "pre-install-cmd": ["Varbase\\composer\\ScriptHandler::checkComposerVersion"],
-    "pre-update-cmd": ["Varbase\\composer\\ScriptHandler::checkComposerVersion"],
     "post-install-cmd": [
       "Varbase\\composer\\ScriptHandler::createRequiredFiles",
       "Varbase\\composer\\ScriptHandler::removeGitDirectories",
-      "@composer drupal-scaffold",
-      "./bin/phing push"
+      "@composer drupal-scaffold"
     ],
     "post-update-cmd": [
       "Varbase\\composer\\ScriptHandler::createRequiredFiles",
-      "Varbase\\composer\\ScriptHandler::removeGitDirectories",
-      "./bin/phing push"
+      "Varbase\\composer\\ScriptHandler::removeGitDirectories"
     ],
-    "post-drupal-scaffold-cmd": ["Varbase\\composer\\ScriptHandler::postDrupalScaffoldProcedure"],
-    "create-new-vartheme": "scripts/create-new-vartheme.sh"
+    "post-drupal-scaffold-cmd": ["Varbase\\composer\\ScriptHandler::postDrupalScaffoldProcedure"]
   },
   "extra": {
     "branch-alias": {
