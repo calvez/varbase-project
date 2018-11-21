@@ -50,8 +50,6 @@
     "varbase-handle-tags": "Varbase\\composer\\VarbaseUpdate::handleTags",
     "varbase-composer-generate": "Varbase\\composer\\VarbaseUpdate::generate",
     "drupal-scaffold": "DrupalComposer\\DrupalScaffold\\Plugin::scaffold",
-    "pre-install-cmd": ["Varbase\\composer\\ScriptHandler::checkComposerVersion"],
-    "pre-update-cmd": ["Varbase\\composer\\ScriptHandler::checkComposerVersion"],
     "post-install-cmd": [
       "Varbase\\composer\\ScriptHandler::createRequiredFiles",
       "Varbase\\composer\\VarbaseUpdate::handleTags",
