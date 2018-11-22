@@ -22,10 +22,6 @@
     "assets": {
       "type": "composer",
       "url": "https://asset-packagist.org"
-    },
-    "local":{
-      "type": "vcs",
-      "url": "/Users/waleedqadi/Projects/vardot/varbase"
     }
   },
   "require": {
