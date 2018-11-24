@@ -67,12 +67,12 @@ if (!file_exists(getcwd().'/scripts/composer')) {
     mkdir(getcwd().'/scripts/composer', 0777, true);
 }
 
-file_put_contents(getcwd().'/scripts/composer/VarbaseUpdate.php', fopen("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/composer/VarbaseUpdate.php", 'r'));
-file_put_contents(getcwd().'/scripts/composer/update-varbase.sh', fopen("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/composer/update-varbase.sh", 'r'));
-file_put_contents("tags.json", fopen("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/tags.json", 'r'));
+file_put_contents(getcwd().'/scripts/composer/VarbaseUpdate.php', fopen("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/composer/VarbaseUpdate.php", 'ug+rx'));
+file_put_contents(getcwd().'/scripts/composer/update-varbase.sh', fopen("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/composer/update-varbase.sh", 'ug+rx'));
+file_put_contents("tags.json", fopen("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/tags.json", 'ug+rx'));
 
 if(file_put_contents($path, $jsondata)) {
   echo "varbase-project successfully updated.\n";
-  echo "Now you can run composer varbase-update to update varbase to latest version.\n";
+  echo "Now you can run ./scripts/composer/update-varbase.sh to update varbase to latest version.\n";
   echo "Thank you.\n";
 }
