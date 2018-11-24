@@ -19,6 +19,16 @@ To install the dev version of Varbase 8.6.x run this command:
 composer create-project vardot/varbase-project:8.6.x-dev PROJECT_DIR_NAME --stability dev --no-interaction
 ```
 
+To update from 8.4.x, 8.5.x or 8.6.2 to the latest varbase please run the follwing command:
+
+```
+wget -O - -q https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/update/update.php | php
+```
+After that execute the update-varbase script using:
+```
+./scripts/composer/update-varbase.sh
+```
+
 ## [Create a new Vartheme sub theme for a project](https://github.com/Vardot/varbase/tree/8.x-6.x/scripts/README.md)
 
 ## [Automated Functional Testing](https://github.com/Vardot/varbase/blob/8.x-6.x/tests/README.md)
