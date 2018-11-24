@@ -308,15 +308,15 @@ class VarbaseUpdate {
       ];
 
 
-      $extras["installer-paths"]['web/libraries/{$name}'] = ["type:bower-asset", "type:npm-asset"];
-      $extras["installer-paths"]["web/libraries/slick"] = ["npm-asset/slick-carousel"];
-      $extras["installer-paths"]["web/libraries/ace"] = ["npm-asset/ace-builds"];
+      $extras["installer-paths"][$paths["rootPath"].'/libraries/{$name}'] = ["type:bower-asset", "type:npm-asset"];
+      $extras["installer-paths"][$paths["rootPath"]."/libraries/slick"] = ["npm-asset/slick-carousel"];
+      $extras["installer-paths"][$paths["rootPath"]."/libraries/ace"] = ["npm-asset/ace-builds"];
       $extras["installer-types"] = [
         "bower-asset",
         "npm-asset"
       ];
       $extras["drupal-libraries"] = [
-        "library-directory" => "web/libraries",
+        "library-directory" => $paths["rootPath"]."/libraries",
         "libraries" => [
             [
                 "name" => "dropzone",
@@ -445,12 +445,13 @@ class VarbaseUpdate {
     $dumper = new ArrayDumper();
     $json = $dumper->dump($projectPackage);
     $json["prefer-stable"] = true;
-
+    $json["extra"]["composer-exit-on-patch-failure"] = false;
+    
     //Fixing the position of installer path web/libraries/{$name} as it should be after slick and ace so it won't override them
-    if(isset($extras["installer-paths"]['web/libraries/{$name}'])){
-      unset($json["extra"]["installer-paths"]['web/libraries/{$name}']);
+    if(isset($extras["installer-paths"][$paths["rootPath"].'/libraries/{$name}'])){
+      unset($json["extra"]["installer-paths"][$paths["rootPath"].'/libraries/{$name}']);
       $extraLibsArray=[
-        'web/libraries/{$name}' => $extras["installer-paths"]['web/libraries/{$name}']
+        $paths["rootPath"].'/libraries/{$name}' => $extras["installer-paths"][$paths["rootPath"].'/libraries/{$name}']
       ];
       $json["extra"]["installer-paths"] = $json["extra"]["installer-paths"] + $extraLibsArray;
     }

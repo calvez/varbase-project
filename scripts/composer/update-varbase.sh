@@ -26,6 +26,8 @@ else
   echo -e "$(tput setaf 2)Updating drupal core to latest.$(tput sgr 0)";
   mkdir -p "${PWD}/update_backups";
   cd "${PWD}/${DRUPALPATH}";
+  drush dl page_manager --pm-force
+  drush cr;
   drush up drupal --pm-force --yes --strict=0;
   cd "${BASEDIR}";
   echo -e "$(tput setaf 2)Updating drupal core is done.$(tput sgr 0)";
