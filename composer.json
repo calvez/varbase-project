@@ -3,16 +3,15 @@
   "description": "Project template for Varbase distribution.",
   "type": "project",
   "license": "GPL-2.0-or-later",
-  "authors": [
-    {
-      "name": "Vardot",
-      "homepage": "https://github.com/vardot",
-      "role": "Maintainer"
-    }
-  ],
-  "support": {
-    "issues": "http://drupal.org/project/issues/varbase",
-    "source": "http://cgit.drupalcode.org/varbase"
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "require": {
+    "webflo/drupal-finder": "^1.1.0",
+    "webmozart/path-util": "^2.3.0",
+    "vardot/varbase": "dev-8.x-6.x-update"
+  },
+  "conflict": {
+    "drupal/drupal": "*"
   },
   "repositories": {
     "drupal": {
@@ -24,11 +23,6 @@
       "url": "https://asset-packagist.org"
     }
   },
-  "require": {
-    "webflo/drupal-finder": "^1.1.0",
-    "webmozart/path-util": "^2.3.0",
-    "vardot/varbase": "dev-8.x-6.x-update"
-  },
   "config": {
     "bin-dir": "bin/",
     "secure-http": false,
@@ -36,11 +30,6 @@
     "preferred-install": {
       "drupal/core": "dist"
     }
-  },
-  "minimum-stability": "dev",
-  "prefer-stable": true,
-  "conflict": {
-    "drupal/drupal": "*"
   },
   "scripts": {
     "varbase-handle-tags": "Varbase\\composer\\VarbaseUpdate::handleTags",
@@ -93,4 +82,15 @@
     "enable-patching": true,
     "composer-exit-on-patch-failure": true
   }
+  "authors": [
+    {
+      "name": "Vardot",
+      "homepage": "https://github.com/vardot",
+      "role": "Maintainer"
+    }
+  ],
+  "support": {
+    "issues": "http://drupal.org/project/issues/varbase",
+    "source": "http://cgit.drupalcode.org/varbase"
+  },
 }
