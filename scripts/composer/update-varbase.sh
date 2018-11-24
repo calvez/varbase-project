@@ -26,7 +26,7 @@ else
   echo -e "$(tput setaf 2)Updating drupal core to latest.$(tput sgr 0)";
   mkdir -p "${PWD}/update_backups";
   cd "${PWD}/${DRUPALPATH}";
-  drush up drupal --yes;
+  drush up drupal --pm-force --yes;
   cd "${BASEDIR}";
   echo -e "$(tput setaf 2)Updating drupal core is done.$(tput sgr 0)";
   echo -e "$(tput setaf 2)Cleanup & Update composer.json to prepare for varbase update.$(tput sgr 0)";
@@ -45,7 +45,7 @@ else
   cd "${PWD}/${DRUPALPATH}";
   drush cr;
   echo -e "$(tput setaf 2)Enable some required modules for latest varbase.$(tput sgr 0)";
-  drush en entity_browser_generic_embed --yes;
+  drush en entity_browser_generic_embed --pm-force --yes;
   echo -e "$(tput setaf 2)Updating the database for latest changes.$(tput sgr 0)";
   drush updb --yes;
   echo "$(tput setaf 2)Update is done!$(tput sgr 0)";
