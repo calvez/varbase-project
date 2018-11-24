@@ -68,7 +68,7 @@ if (!file_exists(getcwd().'/scripts/composer')) {
 }
 
 file_put_contents(getcwd().'/scripts/composer/VarbaseUpdate.php', fopen("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/composer/VarbaseUpdate.php", 'r'));
-
+file_put_contents(getcwd().'/scripts/composer/update-varbase.sh', fopen("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/composer/update-varbase.sh", 'r'));
 file_put_contents("tags.json", fopen("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/tags.json", 'r'));
 
 if(file_put_contents($path, $jsondata)) {
