@@ -2,6 +2,9 @@
 
 namespace Varbase\composer;
 
+use Composer\DependencyResolver\Operation\InstallOperation;
+use Composer\DependencyResolver\Operation\OperationInterface;
+use Composer\DependencyResolver\Operation\UpdateOperation;
 use Composer\Semver\Constraint\Constraint;
 use Composer\Package\Loader\JsonLoader;
 use Composer\Package\Loader\ArrayLoader;
@@ -86,11 +89,32 @@ class VarbaseUpdate {
     return $paths;
   }
 
+  /**
+   * Get a Package object from an OperationInterface object.
+   *
+   * @param OperationInterface $operation
+   * @return PackageInterface
+   * @throws \Exception
+   *
+   * @todo Will this method ever get something other than an InstallOperation or UpdateOperation?
+   */
+  protected static function getPackageFromOperation($operation)
+  {
+      if ($operation instanceof InstallOperation) {
+          $package = $operation->getPackage();
+      } elseif ($operation instanceof UpdateOperation) {
+          $package = $operation->getTargetPackage();
+      } else {
+          throw new \Exception('Unknown operation: ' . get_class($operation));
+      }
+      return $package;
+  }
+
   public static function handlePackageTags(PackageEvent $event) {
     $tagsPath = VarbaseUpdate::getDrupalRoot(getcwd(), "") . "tags.json";
     if(!file_exists($tagsPath)) return;
 
-    $installedPackage = $event->getOperation()->getPackage();
+    $installedPackage = VarbaseUpdate::getPackageFromOperation($event->getOperation());
     $loader = new JsonLoader(new ArrayLoader());
     $configPath = VarbaseUpdate::getDrupalRoot(getcwd(), "") . "composer.json";
 
@@ -221,24 +245,99 @@ class VarbaseUpdate {
 
   public static function generate(Event $event) {
     $paths = VarbaseUpdate::getPaths($event->getComposer()->getPackage());
-    $loader = new JsonLoader(new ArrayLoader());
-    $varbaseConfigPath = $paths['profilesPath'] . "varbase/composer.json";
-    $varbaseConfig = JsonFile::parseJson(file_get_contents($varbaseConfigPath), $varbaseConfigPath);
-    if(!isset($varbaseConfig['version'])){
-      $varbaseConfig['version'] = "6.2.0";
-    }
-    $varbaseConfig = JsonFile::encode($varbaseConfig);
-    $varbasePackage = $loader->load($varbaseConfig);
 
     $composer = $event->getComposer();
     $projectPackage = $event->getComposer()->getPackage();
+    $projectPackageRequires = $projectPackage->getRequires();
+
+    $loader = new JsonLoader(new ArrayLoader());
+    $varbaseConfigPath = $paths['profilesPath'] . "varbase/composer.json";
+    $varbaseConfig = JsonFile::parseJson(file_get_contents($varbaseConfigPath), $varbaseConfigPath);
+    $varbaseVersion = $projectPackageRequires["vardot/varbase"]->getPrettyConstraint();
+
+    if(!isset($varbaseConfig['version'])){
+      $varbaseConfig['version'] = $varbaseVersion;
+    }
+
+    $varbaseConfig = JsonFile::encode($varbaseConfig);
+    $varbasePackage = $loader->load($varbaseConfig);
+
     $io = $event->getIO();
 
     $varbasePackageRequires = $varbasePackage->getRequires();
-    $projectPackageRequires = $projectPackage->getRequires();
+
     $varbaseLink = $projectPackageRequires["vardot/varbase"];
     $requiredPackages = [];
-    $requiredPackageLinks = [$varbaseLink];
+    $crucialPackages = [];
+    $requiredPackageLinks = ["vardot/varbase" => $varbaseLink];
+    $extras = [];
+    $repos = [];
+    $sripts = [];
+
+    if(preg_match('/8\.4/', $varbaseVersion) || preg_match('/8\.5/', $varbaseVersion)){
+
+      $varbaseLinkConstraint = new Constraint("=", "8.6.2");
+      $varbaseLinkConstraint->setPrettyString("8.6.2");
+      $varbaseLink = new Link("vardot/varbase-project", "vardot/varbase", $varbaseLinkConstraint , "", "8.6.2");
+      $requiredPackageLinks = ["vardot/varbase" => $varbaseLink];
+
+      $crucialPackages["drupal/varbase_carousels"] = ["name"=> "drupal/varbase_carousels", "version" => "6.0"];
+      $crucialPackages["drupal/entity_browser"] = ["name"=> "drupal/entity_browser", "version" => "2.0"];
+      $crucialPackages["drupal/video_embed_media"] = ["name"=> "drupal/video_embed_field", "version" => "2.0"];
+      $crucialPackages["drupal/media_entity"] = ["name"=> "drupal/media_entity", "version" => "2.0-beta3"];
+      $crucialPackages["drupal/panelizer"] = ["name"=> "drupal/panelizer", "version" => "4.1"];
+
+      $sripts = [
+        "varbase-handle-tags" => [
+            "Varbase\\composer\\VarbaseUpdate::handleTags"
+        ],
+        "pre-patch-apply" => [
+            "Varbase\\composer\\VarbaseUpdate::handlePackagePatchTags"
+        ],
+        "post-package-update" => [
+            "Varbase\\composer\\VarbaseUpdate::handlePackageTags"
+        ],
+        "post-package-install" => [
+            "Varbase\\composer\\VarbaseUpdate::handlePackageTags"
+        ]
+      ];
+
+      $repos["assets"] = [
+        "type" => "composer",
+        "url" => "https://asset-packagist.org"
+      ];
+
+
+      $extras["installer-paths"]['web/libraries/{$name}'] = ["type:bower-asset", "type:npm-asset"];
+      $extras["installer-paths"]["web/libraries/slick"] = ["npm-asset/slick-carousel"];
+      $extras["installer-paths"]["web/libraries/ace"] = ["npm-asset/ace-builds"];
+      $extras["installer-types"] = [
+        "bower-asset",
+        "npm-asset"
+      ];
+      $extras["drupal-libraries"] = [
+        "library-directory" => "web/libraries",
+        "libraries" => [
+            [
+                "name" => "dropzone",
+                "package" => "npm-asset/dropzone"
+            ],
+            [
+                "name" => "blazy",
+                "package" => "npm-asset/blazy"
+            ],
+            [
+                "name" => "slick",
+                "package" => "npm-asset/slick-carousel"
+            ],
+            [
+                "name" => "ace",
+                "package" => "npm-asset/ace-builds"
+            ]
+        ]
+      ];
+    }
+
 
     foreach (glob($paths['contribModulesPath'] . "*/*.info.yml") as $file) {
       $yaml = Yaml::parse(file_get_contents($file));
@@ -252,6 +351,8 @@ class VarbaseUpdate {
       }
     }
 
+
+
     foreach (glob($paths['contribThemesPath'] . "*/*.info.yml") as $file) {
       $yaml = Yaml::parse(file_get_contents($file));
       if(isset($yaml["project"]) && isset($yaml["version"]) && $yaml["project"] != "varbase"){
@@ -263,6 +364,7 @@ class VarbaseUpdate {
         }
       }
     }
+
 
     foreach (glob($paths['contribModulesPath'] . "*/composer.json") as $file) {
       $pluginConfig = JsonFile::parseJson(file_get_contents($file), $file);
@@ -279,6 +381,7 @@ class VarbaseUpdate {
         }
       }
     }
+
 
     foreach (glob($paths['contribThemesPath'] . "*/composer.json") as $file) {
       $pluginConfig = JsonFile::parseJson(file_get_contents($file), $file);
@@ -305,15 +408,53 @@ class VarbaseUpdate {
       }
     }
 
+
+    foreach ($crucialPackages as $name => $package) {
+      $link = new Link("vardot/varbase-project", $package["name"], new Constraint("==", $package["version"]), "", $package["version"]);
+      $requiredPackageLinks[$name] = $link;
+    }
+
     foreach ($projectPackageRequires as $projectName => $projectPackageLink) {
       if(!isset($varbasePackageRequires[$projectName]) && !isset($requiredPackageLinks[$projectName])){
         $requiredPackageLinks[] = $projectPackageLink;
       }
     }
 
+    $projectPackageExtras = $projectPackage->getExtra();
+    $projectPackageRepos = $projectPackage->getRepositories();
+    $projectScripts = $projectPackage->getScripts();
+
+    if(!$projectPackageExtras){
+      $projectPackageExtras = [];
+    }
+
+    $mergedExtras = array_merge_recursive($projectPackageExtras, $extras);
+    $mergedRepos = array_merge_recursive($projectPackageRepos, $repos);
+    $mergedScripts = array_merge_recursive($projectScripts, $sripts);
+
+    //Make sure to run the Varbase postDrupalScaffoldProcedure insetad of the current project postDrupalScaffoldProcedure
+    if(isset($mergedScripts["post-drupal-scaffold-cmd"])){
+      $mergedScripts["post-drupal-scaffold-cmd"]=["Varbase\\composer\\ScriptHandler::postDrupalScaffoldProcedure"];
+    }
+
+    $projectPackage->setExtra($mergedExtras);
+    $projectPackage->setRepositories($mergedRepos);
     $projectPackage->setRequires($requiredPackageLinks);
+    $projectPackage->setScripts($mergedScripts);
+
     $dumper = new ArrayDumper();
-    $projectConfig = JsonFile::encode($dumper->dump($projectPackage));
+    $json = $dumper->dump($projectPackage);
+    $json["prefer-stable"] = true;
+
+    //Fixing the position of installer path web/libraries/{$name} as it should be after slick and ace so it won't override them
+    if(isset($extras["installer-paths"]['web/libraries/{$name}'])){
+      unset($json["extra"]["installer-paths"]['web/libraries/{$name}']);
+      $extraLibsArray=[
+        'web/libraries/{$name}' => $extras["installer-paths"]['web/libraries/{$name}']
+      ];
+      $json["extra"]["installer-paths"] = $json["extra"]["installer-paths"] + $extraLibsArray;
+    }
+    $projectConfig = JsonFile::encode($json);
     print_r($projectConfig);
   }
 }
