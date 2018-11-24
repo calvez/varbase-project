@@ -26,9 +26,8 @@ else
   echo -e "$(tput setaf 2)Updating drupal core to latest.$(tput sgr 0)";
   mkdir -p "${PWD}/update_backups";
   cd "${PWD}/${DRUPALPATH}";
-  drush dl page_manager --pm-force
-  drush cr;
-  drush up drupal --pm-force --yes --strict=0;
+  drush dl page_manager --pm-force --yes;
+  drush up drupal --pm-force --yes;
   cd "${BASEDIR}";
   echo -e "$(tput setaf 2)Updating drupal core is done.$(tput sgr 0)";
   echo -e "$(tput setaf 2)Cleanup & Update composer.json to prepare for varbase update.$(tput sgr 0)";
@@ -36,6 +35,8 @@ else
   mkdir -p "${PWD}/update_backups/contrib";
   cp -r ${PWD}/${DRUPALPATH}/modules/contrib/media_entity_document ${PWD}/update_backups/contrib/media_entity_document;
   cp -r ${PWD}/${DRUPALPATH}/modules/contrib/media_entity_image ${PWD}/update_backups/contrib/media_entity_image;
+  cp -r ${PWD}/${DRUPALPATH}/modules/contrib/login_destination ${PWD}/update_backups/contrib/login_destination;
+  cp -r ${PWD}/${DRUPALPATH}/modules/contrib/node_edit_protection ${PWD}/update_backups/contrib/node_edit_protection;
   cp ${PWD}/composer.json ${PWD}/update_backups/composer.json.b;
   mv ${PWD}/composer.new.json ${PWD}/composer.json;
   echo -e "$(tput setaf 2)Update varbase to latest.$(tput sgr 0)";
@@ -44,10 +45,12 @@ else
   composer drupal-scaffold;
   cp -r ${PWD}/update_backups/contrib/media_entity_document ${PWD}/${DRUPALPATH}/modules/contrib/media_entity_document;
   cp -r ${PWD}/update_backups/contrib/media_entity_image ${PWD}/${DRUPALPATH}/modules/contrib/media_entity_image;
+  cp -r ${PWD}/update_backups/contrib/login_destination ${PWD}/${DRUPALPATH}/modules/contrib/login_destination;
+  cp -r ${PWD}/update_backups/contrib/node_edit_protection ${PWD}/${DRUPALPATH}/modules/contrib/node_edit_protection;
   cd "${PWD}/${DRUPALPATH}";
   drush cr;
   echo -e "$(tput setaf 2)Enable some required modules for latest varbase.$(tput sgr 0)";
-  drush en entity_browser_generic_embed --pm-force --yes --strict=0;
+  drush en entity_browser_generic_embed --pm-force --yes;
   echo -e "$(tput setaf 2)Updating the database for latest changes.$(tput sgr 0)";
   drush updb --yes;
   echo "$(tput setaf 2)Update is done!$(tput sgr 0)";
