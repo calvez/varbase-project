@@ -81,7 +81,7 @@
     },
     "enable-patching": true,
     "composer-exit-on-patch-failure": true
-  }
+  },
   "authors": [
     {
       "name": "Vardot",
@@ -92,5 +92,5 @@
   "support": {
     "issues": "http://drupal.org/project/issues/varbase",
     "source": "http://cgit.drupalcode.org/varbase"
-  },
+  }
 }
