@@ -1,5 +1,29 @@
 <?php
 
+function get_file($url, $local_path, $newfilename)
+{
+    $err_msg = '';
+    echo "Downloading $url";
+    echo "\n";
+    $out = fopen($local_path.$newfilename,"wrxb");
+    if ($out == FALSE){
+      print "File not opened<br>";
+      exit;
+    }
+
+    $ch = curl_init();
+
+    curl_setopt($ch, CURLOPT_FILE, $out);
+    curl_setopt($ch, CURLOPT_HEADER, 0);
+    curl_setopt($ch, CURLOPT_URL, $url);
+
+    curl_exec($ch);
+
+    curl_close($ch);
+    //fclose($handle);
+
+}//end function
+
 echo "Varbase-project updater started!\n";
 
 $path = getcwd()."/composer.json";
@@ -67,9 +91,9 @@ if (!file_exists(getcwd().'/scripts/composer')) {
     mkdir(getcwd().'/scripts/composer', 0777, true);
 }
 
-file_put_contents(getcwd().'/scripts/composer/VarbaseUpdate.php', fopen("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/composer/VarbaseUpdate.php", 'ug+rx'));
-file_put_contents(getcwd().'/scripts/composer/update-varbase.sh', fopen("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/composer/update-varbase.sh", 'ug+rx'));
-file_put_contents("tags.json", fopen("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/tags.json", 'ug+rx'));
+get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/composer/VarbaseUpdate.php", getcwd().'/scripts/composer/', 'VarbaseUpdate.php');
+get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/composer/update-varbase.sh", getcwd().'/scripts/composer/', 'update-varbase.sh');
+get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/tags.json", '', 'tags.json');
 
 if(file_put_contents($path, $jsondata)) {
   echo "varbase-project successfully updated.\n";
