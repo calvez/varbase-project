@@ -91,9 +91,15 @@ if (!file_exists(getcwd().'/scripts/composer')) {
     mkdir(getcwd().'/scripts/composer', 0777, true);
 }
 
+if (!file_exists(getcwd().'/drush')) {
+    mkdir(getcwd().'/drush', 0777, true);
+}
+
 get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/composer/VarbaseUpdate.php", getcwd().'/scripts/composer/', 'VarbaseUpdate.php');
 get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/composer/update-varbase.sh", getcwd().'/scripts/composer/', 'update-varbase.sh');
 get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/tags.json", '', 'tags.json');
+get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/drush/policy.drush.inc", getcwd().'/drush/', 'policy.drush.inc');
+get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/drush/README.md", getcwd().'/drush/', 'README.md');
 
 if(file_put_contents($path, $jsondata)) {
   echo "varbase-project successfully updated.\n";
