@@ -249,6 +249,14 @@ class VarbaseUpdate {
     $composer = $event->getComposer();
     $projectPackage = $event->getComposer()->getPackage();
     $projectPackageRequires = $projectPackage->getRequires();
+    $projectPackageExtras = $projectPackage->getExtra();
+    $projectPackageRepos = $projectPackage->getRepositories();
+    $projectScripts = $projectPackage->getScripts();
+    $projectPackagePatches = [];
+
+    if(isset($projectPackageExtras["patches"])){
+      $projectPackagePatches = $projectPackageExtras["patches"];
+    }
 
     $loader = new JsonLoader(new ArrayLoader());
     $varbaseConfigPath = $paths['profilesPath'] . "varbase/composer.json";
@@ -345,7 +353,10 @@ class VarbaseUpdate {
         $composerRepo = "drupal";
         $composerName = $composerRepo . "/" . $yaml["project"];
         $composerVersion = str_replace("8.x-", "", $yaml["version"]);
-        if(!isset($varbasePackageRequires[$composerName])){
+
+        if(isset($projectPackagePatches[$composerName])){
+          $requiredPackages[$composerName] = ["name"=> $composerName, "version" => $composerVersion, "patch" => true];
+        }else if(!isset($varbasePackageRequires[$composerName])){
           $requiredPackages[$composerName] = ["name"=> $composerName, "version" => $composerVersion];
         }
       }
@@ -376,6 +387,9 @@ class VarbaseUpdate {
       $pluginPackageRequires = $pluginPackage->getRequires();
 
       foreach ($requiredPackages as $name => $package) {
+        if(isset($projectPackagePatches[$name])){
+          continue;
+        }
         if(isset($pluginPackageRequires[$name])){
           unset($requiredPackages[$name]);
         }
@@ -403,7 +417,11 @@ class VarbaseUpdate {
       if(isset($projectPackageRequires[$name])){
         $requiredPackageLinks[] = $projectPackageRequires[$name];
       }else{
-        $link = new Link("vardot/varbase-project", $package["name"], new Constraint(">=", $package["version"]), "", "^".$package["version"]);
+        if(isset($package["patch"]) && $package["name"]){
+          $link = new Link("vardot/varbase-project", $package["name"], new Constraint("=", $package["version"]), "", $package["version"]);
+        }else{
+          $link = new Link("vardot/varbase-project", $package["name"], new Constraint("=", $package["version"]), "", $package["version"]);
+        }
         $requiredPackageLinks[$name] = $link;
       }
     }
@@ -420,9 +438,6 @@ class VarbaseUpdate {
       }
     }
 
-    $projectPackageExtras = $projectPackage->getExtra();
-    $projectPackageRepos = $projectPackage->getRepositories();
-    $projectScripts = $projectPackage->getScripts();
 
     if(!$projectPackageExtras){
       $projectPackageExtras = [];
@@ -446,7 +461,7 @@ class VarbaseUpdate {
     $json = $dumper->dump($projectPackage);
     $json["prefer-stable"] = true;
     $json["extra"]["composer-exit-on-patch-failure"] = false;
-    
+
     //Fixing the position of installer path web/libraries/{$name} as it should be after slick and ace so it won't override them
     if(isset($extras["installer-paths"][$paths["rootPath"].'/libraries/{$name}'])){
       unset($json["extra"]["installer-paths"][$paths["rootPath"].'/libraries/{$name}']);
