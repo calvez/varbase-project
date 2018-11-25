@@ -417,11 +417,7 @@ class VarbaseUpdate {
       if(isset($projectPackageRequires[$name])){
         $requiredPackageLinks[] = $projectPackageRequires[$name];
       }else{
-        if(isset($package["patch"]) && $package["name"]){
-          $link = new Link("vardot/varbase-project", $package["name"], new Constraint("=", $package["version"]), "", $package["version"]);
-        }else{
-          $link = new Link("vardot/varbase-project", $package["name"], new Constraint("=", $package["version"]), "", $package["version"]);
-        }
+        $link = new Link("vardot/varbase-project", $package["name"], new Constraint(">=", $package["version"]), "", "^".$package["version"]);
         $requiredPackageLinks[$name] = $link;
       }
     }
