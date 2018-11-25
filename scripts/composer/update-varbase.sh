@@ -50,7 +50,7 @@ else
   cd "${PWD}/${DRUPALPATH}";
   drush cr;
   echo -e "$(tput setaf 2)Enable some required modules for latest varbase.$(tput sgr 0)";
-  drush en entity_browser_generic_embed --pm-force --yes;
+  drush en entity_browser_generic_embed --yes;
   echo -e "$(tput setaf 2)Updating the database for latest changes.$(tput sgr 0)";
   drush updb --yes;
   echo "$(tput setaf 2)Update is done!$(tput sgr 0)";
