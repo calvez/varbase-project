@@ -29,17 +29,23 @@ echo "Varbase-project updater started!\n";
 
 $path = getcwd()."/composer.json";
 if(!file_exists($path)){
+  echo "\n";
   echo "Please run this command from your varbase-project root directory";
+  exit;
 }
 $string = file_get_contents(getcwd()."/composer.json");
 $json=json_decode($string,true);
 
 if(isset($json["name"]) && $json["name"] != "vardot/varbase-project"){
+  echo "\n";
   echo "Please run this command from your varbase-project root directory";
+  exit;
 }
 
 if(!isset($json["name"])){
+  echo "\n";
   echo "Please run this command from your varbase-project root directory";
+  exit;
 }
 
 if(!isset($json["autoload"])){
