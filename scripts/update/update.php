@@ -15,6 +15,7 @@ function get_file($url, $local_path, $newfilename)
 
     curl_setopt($ch, CURLOPT_FILE, $out);
     curl_setopt($ch, CURLOPT_HEADER, 0);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
     curl_setopt($ch, CURLOPT_URL, $url);
 
     curl_exec($ch);
@@ -95,11 +96,20 @@ if (!file_exists(getcwd().'/drush')) {
     mkdir(getcwd().'/drush', 0777, true);
 }
 
+if (!file_exists(getcwd().'/bin')) {
+    mkdir(getcwd().'/bin', 0777, true);
+}
+
 get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/composer/VarbaseUpdate.php", getcwd().'/scripts/composer/', 'VarbaseUpdate.php');
 get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/composer/update-varbase.sh", getcwd().'/scripts/composer/', 'update-varbase.sh');
 get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/tags.json", '', 'tags.json');
 get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/drush/policy.drush.inc", getcwd().'/drush/', 'policy.drush.inc');
 get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/drush/README.md", getcwd().'/drush/', 'README.md');
+get_file("https://github.com/drush-ops/drush/releases/download/8.1.18/drush.phar", getcwd().'/bin/', 'drush8');
+
+chmod(getcwd().'/bin/drush8', 0755);
+chmod(getcwd().'/scripts/composer/update-varbase.sh', 0755);
+chmod(getcwd().'/scripts/composer/VarbaseUpdate.php', 0755);
 
 if(file_put_contents($path, $jsondata)) {
   echo "varbase-project successfully updated.\n";

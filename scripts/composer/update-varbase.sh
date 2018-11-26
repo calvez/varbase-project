@@ -1,6 +1,7 @@
 #!/bin/bash
 BASEDIR=$(PWD);
 DRUPALPATH='docroot';
+DRUSH="${BASEDIR}/bin/drush8";
 if [ -d "${PWD}/web" ]; then
   DRUPALPATH='web';
 fi
@@ -23,11 +24,13 @@ read answer;
 if [ "$answer" != "${answer#[Nn]}" ] ;then
   echo "$(tput setaf 2)Exiting update process, Thank you.$(tput sgr 0)"
 else
+  echo -e "$(tput setaf 2)Installing drush-8 .$(tput sgr 0)";
+
   echo -e "$(tput setaf 2)Updating drupal core to latest.$(tput sgr 0)";
   mkdir -p "${PWD}/update_backups";
   cd "${PWD}/${DRUPALPATH}";
-  drush dl page_manager --pm-force --yes;
-  drush up drupal --pm-force --yes;
+  $DRUSH dl page_manager --pm-force --yes --strict=0;
+  $DRUSH up drupal --pm-force --yes --strict=0;
   cd "${BASEDIR}";
   echo -e "$(tput setaf 2)Updating drupal core is done.$(tput sgr 0)";
   echo -e "$(tput setaf 2)Cleanup & Update composer.json to prepare for varbase update.$(tput sgr 0)";
@@ -48,10 +51,10 @@ else
   cp -r ${PWD}/update_backups/contrib/login_destination ${PWD}/${DRUPALPATH}/modules/contrib/login_destination;
   cp -r ${PWD}/update_backups/contrib/node_edit_protection ${PWD}/${DRUPALPATH}/modules/contrib/node_edit_protection;
   cd "${PWD}/${DRUPALPATH}";
-  drush cr;
+  $DRUSH  cr;
   echo -e "$(tput setaf 2)Enable some required modules for latest varbase.$(tput sgr 0)";
-  drush en entity_browser_generic_embed --yes;
+  $DRUSH  en entity_browser_generic_embed --yes;
   echo -e "$(tput setaf 2)Updating the database for latest changes.$(tput sgr 0)";
-  drush updb --yes;
+  $DRUSH  updb --yes;
   echo "$(tput setaf 2)Update is done!$(tput sgr 0)";
 fi
