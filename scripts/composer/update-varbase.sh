@@ -24,8 +24,6 @@ read answer;
 if [ "$answer" != "${answer#[Nn]}" ] ;then
   echo "$(tput setaf 2)Exiting update process, Thank you.$(tput sgr 0)"
 else
-  echo -e "$(tput setaf 2)Installing drush-8 .$(tput sgr 0)";
-
   echo -e "$(tput setaf 2)Updating drupal core to latest.$(tput sgr 0)";
   mkdir -p "${PWD}/update_backups";
   cd "${PWD}/${DRUPALPATH}";
