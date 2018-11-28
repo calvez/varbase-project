@@ -113,6 +113,10 @@ get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/
 get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/drush/README.md", getcwd().'/drush/', 'README.md');
 get_file("https://github.com/drush-ops/drush/releases/download/8.1.18/drush.phar", getcwd().'/bin/', 'drush8');
 
+get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/.download-before-update", getcwd().'/', '.download-before-update');
+get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/.enable-after-update", getcwd().'/', '.enable-after-update');
+get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/.skip-update", getcwd().'/', '.skip-update');
+
 chmod(getcwd().'/bin/drush8', 0755);
 chmod(getcwd().'/scripts/composer/update-varbase.sh', 0755);
 chmod(getcwd().'/scripts/composer/VarbaseUpdate.php', 0755);
