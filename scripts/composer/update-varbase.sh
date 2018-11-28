@@ -1,7 +1,8 @@
 #!/bin/bash
+
 BASEDIR=$(PWD);
 DRUPALPATH='docroot';
-if [ -d "${PWD}/web" ]; then
+if [ -d "${BASEDIR}/web" ]; then
   DRUPALPATH='web';
 fi
 DRUSH="${BASEDIR}/bin/drush8";
@@ -17,7 +18,7 @@ backup () {
   mkdir -p ${BASEDIR}/update_backups/${DRUPALPATH};
   mkdir -p ${BASEDIR}/update_backups/database;
   rsync -a ${BASEDIR}/${DRUPALPATH} ${BASEDIR}/update_backups --exclude sites
-  cp -r ${BASEDIR}/vendor ${BASEDIR}/update_backups/vendor;
+  cp -r ${BASEDIR}/vendor ${BASEDIR}/update_backups/;
   echo ../bin/drush8 > "${BASEDIR}/${DRUPALPATH}/.drush-use";
   $DRUSH sql-dump --result-file=${BASEDIR}/update_backups/database/db.sql --yes  >> ${BASEDIR}/.update-logs 2>&1;
   exception=$(grep -ir 'Drush command terminated abnormally due to an unrecoverable error.' ${BASEDIR}/.update-logs);
@@ -46,6 +47,55 @@ revert_backup () {
   fi
 }
 
+remove_drush(){
+  echo ../bin/drush8 > ${BASEDIR}/${DRUPALPATH}/.drush-use;
+  if [ -d "${BASEDIR}/vendor/drush" ]; then
+    if [ -d "${BASEDIR}/vendor/drush_b" ]; then
+      rm -rf ${BASEDIR}/vendor/drush_b;
+    fi
+    mv ${BASEDIR}/vendor/drush ${BASEDIR}/vendor/drush_b;
+  fi
+}
+
+reset_drush(){
+  rm ${BASEDIR}/${DRUPALPATH}/.drush-use;
+  if [ -d "${BASEDIR}/vendor/drush" ]; then
+    if [ -d "${BASEDIR}/vendor/drush_b" ]; then
+          rm -rf ${BASEDIR}/vendor/drush_b;
+    fi
+  else
+    if [ -d "${BASEDIR}/vendor/drush_b" ]; then
+      mv ${BASEDIR}/vendor/drush_b ${BASEDIR}/vendor/drush;
+    fi
+  fi
+}
+
+download_before_update(){
+  if [ -f ${BASEDIR}/.download-before-update ]; then
+    while read p; do
+      $DRUSH dl $p --pm-force --yes --strict=0 >> ${BASEDIR}/.update-logs 2>&1;
+    done < ${BASEDIR}/.download-before-update
+  fi
+}
+
+copy_after_update(){
+  if [ -f ${BASEDIR}/.skip-update ]; then
+    while read p; do
+      if [ -d "${BASEDIR}/update_backups/${DRUPALPATH}/modules/contrib/${p}" ]; then
+        cp -r ${BASEDIR}/update_backups/${DRUPALPATH}/modules/contrib/${p} ${BASEDIR}/${DRUPALPATH}/modules/contrib/;
+      fi
+    done < ${BASEDIR}/.skip-update
+  fi
+}
+
+enable_after_update(){
+  if [ -f ${BASEDIR}/.enable-after-update ]; then
+    while read p; do
+      $DRUSH  en $p --yes --strict=0 >> ${BASEDIR}/.update-logs 2>&1;
+    done < ${BASEDIR}/.enable-after-update
+  fi
+}
+
 echo "";
 echo "$(tput setaf 4)Welcome to varbase updater:$(tput sgr 0)";
 echo "";
@@ -65,55 +115,66 @@ read answer;
 if [ "$answer" != "${answer#[Nn]}" ] ;then
   echo "$(tput setaf 2)Exiting update process, Thank you.$(tput sgr 0)"
 else
+
   echo -e "$(tput setaf 2)Preparing backups.$(tput sgr 0)";
-  backup
+  backup;
+
   echo -e "$(tput setaf 2)Preparing for update.$(tput sgr 0)";
-  echo ../bin/drush8 > ${BASEDIR}/${DRUPALPATH}/.drush-use;
-  mv ${BASEDIR}/vendor/drush ${BASEDIR}/vendor/drush_b;
+  remove_drush;
   touch ${BASEDIR}/.update-logs;
   echo > ${BASEDIR}/.update-logs;
+
   echo -e "$(tput setaf 2)Updating drupal core to latest.$(tput sgr 0)";
-  cd "${PWD}/${DRUPALPATH}";
-  $DRUSH dl page_manager --pm-force --yes --strict=0 >> ${BASEDIR}/.update-logs 2>&1;
+  echo -e "$(tput setaf 2)Updating drupal core to latest.$(tput sgr 0)" >> ${BASEDIR}/.update-logs;
+  cd ${BASEDIR}/${DRUPALPATH};
+  download_before_update;
   $DRUSH up drupal --pm-force --yes --strict=0 >> ${BASEDIR}/.update-logs 2>&1;
   exception=$(grep -ir 'Drush command terminated abnormally due to an unrecoverable error.' ${BASEDIR}/.update-logs);
   if [ "$exception" ]; then
-    echo -e "$(tput setaf 1)There was and error while updating drupal core.$(tput sgr 0)";
+    echo -e "$(tput setaf 1)There was and error while updating drupal core please check .update-logs file for more information$(tput sgr 0)";
     echo -e "$(tput setaf 2)Reverting Backup!.$(tput sgr 0)";
     revert_backup;
     exit;
   fi
   cd "${BASEDIR}";
   echo -e "$(tput setaf 2)Updating drupal core is done.$(tput sgr 0)";
+  echo -e "$(tput setaf 2)Updating drupal core is done.$(tput sgr 0)" >> ${BASEDIR}/.update-logs;
+  exit;
   echo -e "$(tput setaf 2)Cleanup & Update composer.json to prepare for varbase update.$(tput sgr 0)";
-  composer run-script varbase-composer-generate > ${PWD}/composer.new.json;
-  cp ${PWD}/composer.json ${PWD}/update_backups/composer.json.b;
-  mv ${PWD}/composer.new.json ${PWD}/composer.json;
-  echo -e "$(tput setaf 2)Update varbase to latest.$(tput sgr 0)";
+  echo -e "$(tput setaf 2)Cleanup & Update composer.json to prepare for varbase update.$(tput sgr 0)" >> ${BASEDIR}/.update-logs;
+  composer run-script varbase-composer-generate > ${BASEDIR}/composer.new.json;
+  cp ${BASEDIR}/composer.json ${BASEDIR}/update_backups/composer.json.b;
+  mv ${BASEDIR}/composer.new.json ${BASEDIR}/composer.json;
+
+  echo -e "$(tput setaf 2)Updating varbase to latest.$(tput sgr 0)";
+  echo -e "$(tput setaf 2)Updating varbase to latest.$(tput sgr 0)" >> ${BASEDIR}/.update-logs;
   composer update;
   composer update;
   composer drupal-scaffold;
-  cp -r ${BASEDIR}/update_backups/${DRUPALPATH}/modules/contrib/media_entity_document ${BASEDIR}/${DRUPALPATH}/modules/contrib/;
-  cp -r ${BASEDIR}/update_backups/${DRUPALPATH}/modules/contrib/media_entity_image ${BASEDIR}/${DRUPALPATH}/modules/contrib/;
-  cp -r ${BASEDIR}/update_backups/${DRUPALPATH}/modules/contrib/login_destination ${BASEDIR}/${DRUPALPATH}/modules/contrib/;
-  cp -r ${BASEDIR}/update_backups/${DRUPALPATH}/modules/contrib/node_edit_protection ${BASEDIR}/${DRUPALPATH}/modules/contrib/;
+
+  copy_after_update;
+
   cd ${BASEDIR}/${DRUPALPATH};
-  echo ../bin/drush8 > "${BASEDIR}/${DRUPALPATH}/.drush-use";
-  rm -rf ${BASEDIR}/vendor/drush_b;
-  mv ${BASEDIR}/vendor/drush ${BASEDIR}/vendor/drush_b;
-  $DRUSH cr >> ${BASEDIR}/.update-logs 2>&1;
+  remove_drush;
+  $DRUSH  cr --strict=0 >> ${BASEDIR}/.update-logs 2>&1;
+
   echo -e "$(tput setaf 2)Enable some required modules for latest varbase.$(tput sgr 0)";
-  $DRUSH en entity_browser_generic_embed --yes >> ${BASEDIR}/.update-logs 2>&1;
+  echo -e "$(tput setaf 2)Enable some required modules for latest varbase.$(tput sgr 0)" >> ${BASEDIR}/.update-logs;
+  enable_after_update;
+
   echo -e "$(tput setaf 2)Updating the database for latest changes.$(tput sgr 0)";
-  $DRUSH updb --yes >> ${BASEDIR}/.update-logs 2>&1;
+  echo -e "$(tput setaf 2)Updating the database for latest changes.$(tput sgr 0)" >> ${BASEDIR}/.update-logs;
+  $DRUSH  updb --yes --strict=0 >> ${BASEDIR}/.update-logs 2>&1;
+
   exception=$(grep -ir 'Drush command terminated abnormally due to an unrecoverable error.' ${BASEDIR}/.update-logs);
   if [ "$exception" ]; then
-    echo -e "$(tput setaf 1)There was and error while updating drupal core.$(tput sgr 0)";
+    echo -e "$(tput setaf 1)There was and error while updating drupal core please check .update-logs file for more information$(tput sgr 0)";
     echo -e "$(tput setaf 2)Reverting Backup!.$(tput sgr 0)";
     revert_backup;
     exit;
   fi
+
   echo "$(tput setaf 2)Update is done!$(tput sgr 0)";
-  mv ${BASEDIR}/vendor/drush_b ${BASEDIR}/vendor/drush;
-  echo  > ${BASEDIR}/${DRUPALPATH}/.drush-use;
+  echo "$(tput setaf 2)Update is done!$(tput sgr 0)" >> ${BASEDIR}/.update-logs;
+  reset_drush;
 fi
