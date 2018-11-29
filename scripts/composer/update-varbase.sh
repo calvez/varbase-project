@@ -153,9 +153,9 @@ else
 
   echo -e "$(tput setaf 2)Updating varbase to latest.$(tput sgr 0)";
   echo -e "$(tput setaf 2)Updating varbase to latest.$(tput sgr 0)" >> ${ERRORLOG};
-  composer update >> /dev/null 2>> ${ERRORLOG};
-  composer update >> /dev/null 2>> ${ERRORLOG};
-  composer drupal-scaffold >> /dev/null 2>> ${ERRORLOG};
+  composer update;
+  composer update;
+  composer drupal-scaffold;
 
   copy_after_update;
 
