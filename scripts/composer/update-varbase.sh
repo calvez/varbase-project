@@ -1,5 +1,4 @@
 #!/bin/bash
-
 BASEDIR=$(PWD);
 ERRORLOG=${BASEDIR}/.update-error-log;
 DRUPALPATH='docroot';
@@ -19,19 +18,20 @@ backup () {
   mkdir -p ${BASEDIR}/update_backups/database;
   cp -r ${BASEDIR}/${DRUPALPATH} ${BASEDIR}/update_backups/;
   cp -r ${BASEDIR}/vendor ${BASEDIR}/update_backups/;
-  echo ${BASEDIR}/bin/drush8 > "${BASEDIR}/${DRUPALPATH}/.drush-use";
+  cp ${BASEDIR}/composer.json ${BASEDIR}/update_backups/composer.json;
+  echo ${DRUSH} > "${BASEDIR}/${DRUPALPATH}/.drush-use";
   remove_drush;
+  echo ${DRUSH} > "${BASEDIR}/${DRUPALPATH}/.drush-use";
   cd ${BASEDIR}/${DRUPALPATH};
-  $DRUSH sql-dump --result-file=${BASEDIR}/update_backups/database/db.sql >> /dev/null 2>> ${ERRORLOG};
-  cd ${BASEDIR};
-  exception=$(grep -ir 'error' ${ERRORLOG});
-  grep -ir 'error' ${ERRORLOG}
-  echo ${exception};
-  if [ "$exception" ]; then
-    return -1;
-  else
-    return 0;
+  ${DRUSH} sql-dump --result-file=${BASEDIR}/update_backups/database/db.sql 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
+  result="$?";
+  if [ "$result" -ne 0 ]; then
+      echo "$(tput setab 1)$(tput setaf 7)Backup failed exiting update process pelase check ${ERRORLOG} for more info$(tput sgr 0)";
+      cd ${BASEDIR};
+      reset_drush;
+      exit;
   fi
+  cd ${BASEDIR};
 }
 
 revert_backup () {
@@ -39,18 +39,20 @@ revert_backup () {
   cp -r ${BASEDIR}/update_backups/${DRUPALPATH} ${BASEDIR}/
   rm -rf ${BASEDIR}/vendor/*
   cp -r ${BASEDIR}/update_backups/vendor ${BASEDIR}/;
+  cp ${BASEDIR}/update_backups/composer.json ${BASEDIR}/composer.json;
   echo ${BASEDIR}/bin/drush8 > "${BASEDIR}/${DRUPALPATH}/.drush-use";
   remove_drush;
   cd ${BASEDIR}/${DRUPALPATH};
-  $DRUSH sql-drop --yes >> /dev/null 2>> ${ERRORLOG};
-  $DRUSH sql-cli < ${BASEDIR}/update_backups/database/db.sql --yes >> /dev/null 2>> ${ERRORLOG};
+  $DRUSH sql-drop --yes 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
+  $DRUSH sql-cli < ${BASEDIR}/update_backups/database/db.sql --yes 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
+  result="$?";
+  if [ "$result" -ne 0 ]; then
+      echo "$(tput setab 1)$(tput setaf 7)Backup revert failed pelase check ${ERRORLOG} for more info, you can find the backups under ${BASEDIR}/update_backups.$(tput sgr 0)";
+      reset_drush;
+      exit;
+  fi
   cd ${BASEDIR};
   reset_drush;
-  exception=$(grep -ir 'Drush command terminated abnormally due to an unrecoverable error.' ${ERRORLOG});
-  if [ "$exception" ]; then
-    echo -e "$(tput setaf 1)There was and error while preparing the backup drupal please check .update-error-log file for more information$(tput sgr 0)";
-    exit;
-  fi
 }
 
 remove_drush(){
@@ -61,6 +63,7 @@ remove_drush(){
     fi
     mv ${BASEDIR}/vendor/drush ${BASEDIR}/vendor/drush_b;
   fi
+  composer dump-autoload;
 }
 
 reset_drush(){
@@ -74,6 +77,7 @@ reset_drush(){
       mv ${BASEDIR}/vendor/drush_b ${BASEDIR}/vendor/drush;
     fi
   fi
+  composer dump-autoload;
 }
 
 download_before_update(){
@@ -81,7 +85,13 @@ download_before_update(){
     while read p; do
       echo -e "$(tput setaf 2)Downloading $p.$(tput sgr 0)";
       echo -e "$(tput setaf 2)Downloading $p.$(tput sgr 0)" >> ${ERRORLOG};
-      $DRUSH dl $p --pm-force --yes --strict=0 >> /dev/null 2>> ${ERRORLOG};
+      $DRUSH dl $p --pm-force --yes --strict=0 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
+      result="$?";
+      if [ "$result" -ne 0 ]; then
+          echo "$(tput setab 1)$(tput setaf 7)Error while downloading $p, reverting your site back. Please check ${ERRORLOG} for more info.$(tput sgr 0)";
+          revert_backup;
+          exit;
+      fi
     done < ${BASEDIR}/.download-before-update
   fi
 }
@@ -99,7 +109,13 @@ copy_after_update(){
 enable_after_update(){
   if [ -f ${BASEDIR}/.enable-after-update ]; then
     while read p; do
-      $DRUSH  en $p --yes --strict=0 >> /dev/null 2>> ${ERRORLOG};
+      $DRUSH  en $p --yes --strict=0 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
+      result="$?";
+      if [ "$result" -ne 0 ]; then
+          echo "$(tput setab 1)$(tput setaf 7)Error while enabling $p, reverting your site back. Please check ${ERRORLOG} for more info.$(tput sgr 0)";
+          revert_backup;
+          exit;
+      fi
     done < ${BASEDIR}/.enable-after-update
   fi
 }
@@ -126,42 +142,61 @@ else
   touch ${ERRORLOG};
   echo > ${ERRORLOG};
   echo -e "$(tput setaf 2)Preparing backups.$(tput sgr 0)";
-  backup
+  backup;
   echo -e "$(tput setaf 2)Updating drupal core to latest.$(tput sgr 0)";
   echo -e "$(tput setaf 2)Updating drupal core to latest.$(tput sgr 0)" >> ${ERRORLOG};
   cd ${BASEDIR}/${DRUPALPATH};
   echo -e "$(tput setaf 2)Downloading needed modules before update.$(tput sgr 0)";
   echo -e "$(tput setaf 2)Downloading needed modules before update.$(tput sgr 0)" >> ${ERRORLOG};
   download_before_update;
-  $DRUSH up drupal --pm-force --yes --strict=0 >> /dev/null 2>> ${ERRORLOG} ;
-  exception=$(grep -ir 'Drush command terminated abnormally due to an unrecoverable error.' ${ERRORLOG});
-  if [ "$exception" ]; then
-    echo -e "$(tput setaf 1)There was and error while updating drupal core please check .update-error-log file for more information$(tput sgr 0)";
-    echo -e "$(tput setaf 2)Reverting Backup!.$(tput sgr 0)";
-    revert_backup;
-    exit;
+  $DRUSH up drupal --pm-force --yes --strict=0 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
+  result="$?";
+  if [ "$result" -ne 0 ]; then
+      echo -e "$(tput setab 1)$(tput setaf 7)There was and error while updating drupal core please check ${ERRORLOG} file for more information$(tput sgr 0)";
+      echo -e "$(tput setab 1)$(tput setaf 7)Reverting Backup!.$(tput sgr 0)";
+      revert_backup;
+      exit;
   fi
-  revert_backup;
   cd "${BASEDIR}";
   echo -e "$(tput setaf 2)Updating drupal core is done.$(tput sgr 0)";
   echo -e "$(tput setaf 2)Updating drupal core is done.$(tput sgr 0)" >> ${ERRORLOG};
   echo -e "$(tput setaf 2)Cleanup & Update composer.json to prepare for varbase update.$(tput sgr 0)";
   echo -e "$(tput setaf 2)Cleanup & Update composer.json to prepare for varbase update.$(tput sgr 0)" >> ${ERRORLOG};
   composer run-script varbase-composer-generate > ${BASEDIR}/composer.new.json;
-  cp ${BASEDIR}/composer.json ${BASEDIR}/update_backups/composer.json.b;
+  result="$?";
+  if [ "$result" -ne 0 ]; then
+      echo -e "$(tput setab 1)$(tput setaf 7)There was and error while Cleanup & Update composer.json please check ${ERRORLOG} file for more information$(tput sgr 0)";
+      echo -e "$(tput setab 1)$(tput setaf 7)Reverting Backup!.$(tput sgr 0)";
+      revert_backup;
+      exit;
+  fi
   mv ${BASEDIR}/composer.new.json ${BASEDIR}/composer.json;
 
   echo -e "$(tput setaf 2)Updating varbase to latest.$(tput sgr 0)";
   echo -e "$(tput setaf 2)Updating varbase to latest.$(tput sgr 0)" >> ${ERRORLOG};
-  composer update;
-  composer update;
-  composer drupal-scaffold;
+  composer update 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
+  composer update 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
+  result="$?";
+  if [ "$result" -ne 0 ]; then
+      echo -e "$(tput setab 1)$(tput setaf 7)There was and error while Updating varbase to latest please check ${ERRORLOG} file for more information$(tput sgr 0)";
+      echo -e "$(tput setab 1)$(tput setaf 7)Reverting Backup!.$(tput sgr 0)";
+      revert_backup;
+      exit;
+  fi
+  composer drupal-scaffold 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
+  result="$?";
+  if [ "$result" -ne 0 ]; then
+      echo -e "$(tput setab 1)$(tput setaf 7)There was and error while Updating varbase to latest please check ${ERRORLOG} file for more information$(tput sgr 0)";
+      echo -e "$(tput setab 1)$(tput setaf 7)Reverting Backup!.$(tput sgr 0)";
+      revert_backup;
+      exit;
+  fi
 
   copy_after_update;
 
   cd ${BASEDIR}/${DRUPALPATH};
   remove_drush;
-  $DRUSH  cr --strict=0 >> /dev/null 2>> ${ERRORLOG};
+  $DRUSH cr --strict=0 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
 
   echo -e "$(tput setaf 2)Enable some required modules for latest varbase.$(tput sgr 0)";
   echo -e "$(tput setaf 2)Enable some required modules for latest varbase.$(tput sgr 0)" >> ${ERRORLOG};
@@ -169,14 +204,13 @@ else
 
   echo -e "$(tput setaf 2)Updating the database for latest changes.$(tput sgr 0)";
   echo -e "$(tput setaf 2)Updating the database for latest changes.$(tput sgr 0)" >> ${ERRORLOG};
-  $DRUSH  updb --yes --strict=0 >> /dev/null 2>> ${ERRORLOG};
-
-  exception=$(grep -ir 'Drush command terminated abnormally due to an unrecoverable error.' ${ERRORLOG});
-  if [ "$exception" ]; then
-    echo -e "$(tput setaf 1)There was and error while updating drupal core please check .update-error-log file for more information$(tput sgr 0)";
-    echo -e "$(tput setaf 2)Reverting Backup!.$(tput sgr 0)";
-    revert_backup;
-    exit;
+  $DRUSH  updb --yes --strict=0 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
+  result="$?";
+  if [ "$result" -ne 0 ]; then
+      echo -e "$(tput setab 1)$(tput setaf 7)There was and error while updating drupal core please check ${ERRORLOG} file for more information$(tput sgr 0)";
+      echo -e "$(tput setab 1)$(tput setaf 7)Reverting Backup!.$(tput sgr 0)";
+      revert_backup;
+      exit;
   fi
 
   echo "$(tput setaf 2)Update is done!$(tput sgr 0)";
