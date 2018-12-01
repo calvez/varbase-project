@@ -66,23 +66,20 @@ if(!isset($json["scripts"])){
   $json["scripts"] = [
     "varbase-composer-generate" => [
       "Varbase\\composer\\VarbaseUpdate::generate"
-    ],
-    "varbase-update" => [
-      "Varbase\\composer\\VarbaseUpdate::updateVarbase"
     ]
   ];
 }else if(isset($json["scripts"])){
   $json["scripts"]["varbase-composer-generate"]= [
     "Varbase\\composer\\VarbaseUpdate::generate"
   ];
-  $json["scripts"]["varbase-update"]= [
-    "./scripts/composer/update-varbase.sh"
-  ];
 }
 $drupalPath = "docroot";
 if (file_exists(getcwd().'/web')) {
   $drupalPath = "web";
 }
+
+echo "Drupal root set to " . $drupalPath . " if your drupal root is differnet than this, please change install-path inside composer.json under extra section.\n";
+
 if(!isset($json["extra"])){
   $json["extra"] = [
     "install-path" => $drupalPath
@@ -108,14 +105,29 @@ if (!file_exists(getcwd().'/bin')) {
 
 get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/composer/VarbaseUpdate.php", getcwd().'/scripts/composer/', 'VarbaseUpdate.php');
 get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/composer/update-varbase.sh", getcwd().'/scripts/composer/', 'update-varbase.sh');
-get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/tags.json", '', 'tags.json');
-get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/drush/policy.drush.inc", getcwd().'/drush/', 'policy.drush.inc');
-get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/drush/README.md", getcwd().'/drush/', 'README.md');
-get_file("https://github.com/drush-ops/drush/releases/download/8.1.18/drush.phar", getcwd().'/bin/', 'drush8');
 
-get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/.download-before-update", getcwd().'/', '.download-before-update');
-get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/.enable-after-update", getcwd().'/', '.enable-after-update');
-get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/.skip-update", getcwd().'/', '.skip-update');
+//only download them if they don't exist
+if (!file_exists(getcwd().'/tags.json')) {
+    get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/tags.json", '', 'tags.json');
+}
+if (!file_exists(getcwd().'/drush/policy.drush.inc')) {
+    get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/drush/policy.drush.inc", getcwd().'/drush/', 'policy.drush.inc');
+}
+if (!file_exists(getcwd().'/drush/README.md')) {
+    get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/drush/README.md", getcwd().'/drush/', 'README.md');
+}
+if (!file_exists(getcwd().'/bin/drush8')) {
+    get_file("https://github.com/drush-ops/drush/releases/download/8.1.18/drush.phar", getcwd().'/bin/', 'drush8');
+}
+if (!file_exists(getcwd().'/.download-before-update')) {
+  get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/.download-before-update", getcwd().'/', '.download-before-update');
+}
+if (!file_exists(getcwd().'/.enable-after-update')) {
+  get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/.enable-after-update", getcwd().'/', '.enable-after-update');
+}
+if (!file_exists(getcwd().'/.skip-update')) {
+  get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/.skip-update", getcwd().'/', '.skip-update');
+}
 
 chmod(getcwd().'/bin/drush8', 0755);
 chmod(getcwd().'/scripts/composer/update-varbase.sh', 0755);

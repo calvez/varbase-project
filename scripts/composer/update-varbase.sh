@@ -35,6 +35,7 @@ backup () {
 }
 
 revert_backup () {
+  cd ${BASEDIR}
   rm -rf ${BASEDIR}/${DRUPALPATH}
   cp -r ${BASEDIR}/update_backups/${DRUPALPATH} ${BASEDIR}/
   rm -rf ${BASEDIR}/vendor/*
@@ -166,7 +167,9 @@ else
   result="$?";
   if [ "$result" -ne 0 ]; then
       echo -e "$(tput setab 1)$(tput setaf 7)There was and error while Cleanup & Update composer.json please check ${ERRORLOG} file for more information$(tput sgr 0)";
-      echo -e "$(tput setab 1)$(tput setaf 7)Reverting Backup!.$(tput sgr 0)";
+      echo -e "$(tput setab 1)$(tput setaf 7)If you are on 4.x/5.x make sure to update varbase-project using the update command: $(tput sgr 0)";
+      echo -e "$(tput setaf 2)wget -O - -q https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/update/update.php | php$(tput sgr 0)";
+      echo -e "$(tput setab 2)$(tput setaf 7)Reverting Backup!.$(tput sgr 0)";
       revert_backup;
       exit;
   fi
@@ -174,6 +177,7 @@ else
 
   echo -e "$(tput setaf 2)Updating varbase to latest.$(tput sgr 0)";
   echo -e "$(tput setaf 2)Updating varbase to latest.$(tput sgr 0)" >> ${ERRORLOG};
+  composer update 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
   composer update 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
   composer update 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
   result="$?";
@@ -197,7 +201,11 @@ else
   cd ${BASEDIR}/${DRUPALPATH};
   remove_drush;
   $DRUSH cr --strict=0 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
-
+  result="$?";
+  if [ "$result" -ne 0 ]; then
+      echo -e "$(tput setab 1)$(tput setaf 7)Something went wrong while rebuilding the cache (drush cr), this might cause the update to fail.$(tput sgr 0)";
+      echo -e "$(tput setab 1)$(tput setaf 7)We will continue the update anyway, as it might get solved while applying the new database updates.$(tput sgr 0)";
+  fi
   echo -e "$(tput setaf 2)Enable some required modules for latest varbase.$(tput sgr 0)";
   echo -e "$(tput setaf 2)Enable some required modules for latest varbase.$(tput sgr 0)" >> ${ERRORLOG};
   enable_after_update;
