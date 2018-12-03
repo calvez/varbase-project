@@ -51,9 +51,6 @@
   },
   "extra": {
     "install-path": "docroot",
-    "branch-alias": {
-      "dev-8.x-6.x-update": "8.6.x-update-dev"
-    },
     "installer-paths": {
       "docroot/core": ["drupal/core"],
       "docroot/profiles/{$name}": ["type:drupal-profile"],
