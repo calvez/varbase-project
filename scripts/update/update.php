@@ -107,8 +107,8 @@ if (!file_exists(getcwd().'/bin')) {
     mkdir(getcwd().'/bin', 0777, true);
 }
 
-//get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/composer/VarbaseUpdate.php", getcwd().'/scripts/composer/', 'VarbaseUpdate.php');
-//get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/update/update-varbase.sh", getcwd().'/scripts/update/', 'update-varbase.sh');
+get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/composer/VarbaseUpdate.php", getcwd().'/scripts/composer/', 'VarbaseUpdate.php');
+get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/update/update-varbase.sh", getcwd().'/scripts/update/', 'update-varbase.sh');
 
 //only download them if they don't exist
 if (!file_exists(getcwd().'/tags.json')) {
