@@ -111,7 +111,7 @@ class VarbaseUpdate {
   }
 
   public static function handlePackageTags(PackageEvent $event) {
-    $tagsPath = VarbaseUpdate::getDrupalRoot(getcwd(), "") . "tags.json";
+    $tagsPath = VarbaseUpdate::getDrupalRoot(getcwd(), "") . "scripts/update/tags.json";
     if(!file_exists($tagsPath)) return;
 
     $installedPackage = VarbaseUpdate::getPackageFromOperation($event->getOperation());
@@ -120,7 +120,7 @@ class VarbaseUpdate {
 
     $config = JsonFile::parseJson(file_get_contents($configPath), $configPath);
     if(!isset($config['version'])){
-      $config['version'] = "6.2.0";
+      $config['version'] = "0.0.0"; //dummy version just to handle UnexpectedValueException
     }
     $config = JsonFile::encode($config);
     $package = $loader->load($config);
@@ -158,7 +158,7 @@ class VarbaseUpdate {
   }
 
   public static function handlePackagePatchTags(PatchEvent $event) {
-    $tagsPath = VarbaseUpdate::getDrupalRoot(getcwd(), "") . "tags.json";
+    $tagsPath = VarbaseUpdate::getDrupalRoot(getcwd(), "") . "scripts/update/tags.json";
     if(!file_exists($tagsPath)) return;
 
     $installedPackage = $event->getPackage();
@@ -167,7 +167,7 @@ class VarbaseUpdate {
     $configPath = VarbaseUpdate::getDrupalRoot(getcwd(), "") . "composer.json";
     $config = JsonFile::parseJson(file_get_contents($configPath), $configPath);
     if(!isset($config['version'])){
-      $config['version'] = "6.2.0";
+      $config['version'] = "0.0.0"; //dummy version just to handle UnexpectedValueException
     }
     $config = JsonFile::encode($config);
     $package = $loader->load($config);
@@ -209,7 +209,7 @@ class VarbaseUpdate {
     $varbaseConfigPath = VarbaseUpdate::getDrupalRoot(getcwd()) . "/profiles/varbase/composer.json";
     $varbaseConfig = JsonFile::parseJson(file_get_contents($varbaseConfigPath), $varbaseConfigPath);
     if(!isset($varbaseConfig['version'])){
-      $varbaseConfig['version'] = "6.2.0";
+      $varbaseConfig['version'] = "0.0.0"; //dummy version just to handle UnexpectedValueException
     }
     $varbaseConfig = JsonFile::encode($varbaseConfig);
     $varbasePackage = $loader->load($varbaseConfig);
@@ -264,7 +264,7 @@ class VarbaseUpdate {
     $varbaseVersion = $projectPackageRequires["vardot/varbase"]->getPrettyConstraint();
 
     if(!isset($varbaseConfig['version'])){
-      $varbaseConfig['version'] = $varbaseVersion;
+      $varbaseConfig['version'] = "0.0.0"; //dummy version just to handle UnexpectedValueException
     }
 
     $varbaseConfig = JsonFile::encode($varbaseConfig);
@@ -282,18 +282,26 @@ class VarbaseUpdate {
     $repos = [];
     $sripts = [];
 
+
     if(preg_match('/8\.4/', $varbaseVersion) || preg_match('/8\.5/', $varbaseVersion)){
 
-      $varbaseLinkConstraint = new Constraint("=", "8.6.2");
-      $varbaseLinkConstraint->setPrettyString("8.6.2");
-      $varbaseLink = new Link("vardot/varbase-project", "vardot/varbase", $varbaseLinkConstraint , "", "8.6.2");
-      $requiredPackageLinks = ["vardot/varbase" => $varbaseLink];
+      if(preg_match('/8\.4\.28/', $varbaseVersion) || preg_match('/8\.5/', $varbaseVersion)){
+        $varbaseLinkConstraint = new Constraint(">=", "8.6.2");
+        $varbaseLinkConstraint->setPrettyString("~8.6.2");
+        $varbaseLink = new Link("vardot/varbase-project", "vardot/varbase", $varbaseLinkConstraint , "", "~8.6.2");
+        $requiredPackageLinks = ["vardot/varbase" => $varbaseLink];
 
-      $crucialPackages["drupal/varbase_carousels"] = ["name"=> "drupal/varbase_carousels", "version" => "6.0"];
-      $crucialPackages["drupal/entity_browser"] = ["name"=> "drupal/entity_browser", "version" => "2.0"];
-      $crucialPackages["drupal/video_embed_media"] = ["name"=> "drupal/video_embed_field", "version" => "2.0"];
-      $crucialPackages["drupal/media_entity"] = ["name"=> "drupal/media_entity", "version" => "2.0-beta3"];
-      $crucialPackages["drupal/panelizer"] = ["name"=> "drupal/panelizer", "version" => "4.1"];
+        $crucialPackages["drupal/varbase_carousels"] = ["name"=> "drupal/varbase_carousels", "version" => "6.0"];
+        $crucialPackages["drupal/entity_browser"] = ["name"=> "drupal/entity_browser", "version" => "2.0"];
+        $crucialPackages["drupal/video_embed_media"] = ["name"=> "drupal/video_embed_field", "version" => "2.0"];
+        $crucialPackages["drupal/media_entity"] = ["name"=> "drupal/media_entity", "version" => "2.0-beta3"];
+        $crucialPackages["drupal/panelizer"] = ["name"=> "drupal/panelizer", "version" => "4.1"];
+      }else{
+        $varbaseLinkConstraint = new Constraint("=", "8.4.28");
+        $varbaseLinkConstraint->setPrettyString("8.4.28");
+        $varbaseLink = new Link("vardot/varbase-project", "vardot/varbase", $varbaseLinkConstraint , "", "8.4.28");
+        $requiredPackageLinks = ["vardot/varbase" => $varbaseLink];
+      }
 
       $sripts = [
         "varbase-handle-tags" => [
@@ -322,6 +330,10 @@ class VarbaseUpdate {
       $extras["installer-types"] = [
         "bower-asset",
         "npm-asset"
+      ];
+
+      $extras["varbase-update"] = [
+        "generated" => true
       ];
       $extras["drupal-libraries"] = [
         "library-directory" => $paths["rootPath"]."/libraries",
@@ -439,9 +451,21 @@ class VarbaseUpdate {
       $projectPackageExtras = [];
     }
 
-    $mergedExtras = array_merge_recursive($projectPackageExtras, $extras);
-    $mergedRepos = array_merge_recursive($projectPackageRepos, $repos);
-    $mergedScripts = array_merge_recursive($projectScripts, $sripts);
+    $mergedExtras = $projectPackageExtras;
+    if(!isset($projectPackageExtras["varbase-update"]["generated"])){
+      $mergedExtras = array_merge_recursive($projectPackageExtras, $extras);
+    }
+
+
+    $mergedRepos = $projectPackageRepos;
+    if(!isset($projectPackageExtras["varbase-update"]["generated"])){
+      $mergedRepos = array_merge_recursive($projectPackageRepos, $repos);
+    }
+
+    $mergedScripts = $projectScripts;
+    if(!isset($projectPackageExtras["varbase-update"]["generated"])){
+      $mergedScripts = array_merge_recursive($projectScripts, $sripts);
+    }
 
     //Make sure to run the Varbase postDrupalScaffoldProcedure insetad of the current project postDrupalScaffoldProcedure
     if(isset($mergedScripts["post-drupal-scaffold-cmd"])){

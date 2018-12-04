@@ -14,6 +14,7 @@ if [ "$drupalfolder" ] ;then
 fi;
 
 backup () {
+  rm -rf ${BASEDIR}/update_backups;
   mkdir -p ${BASEDIR}/update_backups/${DRUPALPATH};
   mkdir -p ${BASEDIR}/update_backups/database;
   cp -r ${BASEDIR}/${DRUPALPATH} ${BASEDIR}/update_backups/;
@@ -82,42 +83,42 @@ reset_drush(){
 }
 
 download_before_update(){
-  if [ -f ${BASEDIR}/.download-before-update ]; then
+  if [ -f ${BASEDIR}/scripts/update/.download-before-update ]; then
     while read p; do
       echo -e "$(tput setaf 2)Downloading $p.$(tput sgr 0)";
       echo -e "$(tput setaf 2)Downloading $p.$(tput sgr 0)" >> ${ERRORLOG};
-      $DRUSH dl $p --pm-force --yes --strict=0 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
+      $DRUSH up $p --pm-force --yes --strict=0 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
       result="$?";
       if [ "$result" -ne 0 ]; then
           echo "$(tput setab 1)$(tput setaf 7)Error while downloading $p, reverting your site back. Please check ${ERRORLOG} for more info.$(tput sgr 0)";
           revert_backup;
           exit;
       fi
-    done < ${BASEDIR}/.download-before-update
+    done < ${BASEDIR}/scripts/update/.download-before-update
   fi
 }
 
 copy_after_update(){
-  if [ -f ${BASEDIR}/.skip-update ]; then
+  if [ -f ${BASEDIR}/scripts/update/.skip-update ]; then
     while read p; do
       if [ -d "${BASEDIR}/update_backups/${DRUPALPATH}/modules/contrib/${p}" ]; then
         cp -r ${BASEDIR}/update_backups/${DRUPALPATH}/modules/contrib/${p} ${BASEDIR}/${DRUPALPATH}/modules/contrib/;
       fi
-    done < ${BASEDIR}/.skip-update
+    done < ${BASEDIR}/scripts/update/.skip-update
   fi
 }
 
 enable_after_update(){
-  if [ -f ${BASEDIR}/.enable-after-update ]; then
+  if [ -f ${BASEDIR}/scripts/update/.enable-after-update ]; then
     while read p; do
-      $DRUSH  en $p --yes --strict=0 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
+      $DRUSH en $p --yes --strict=0 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
       result="$?";
       if [ "$result" -ne 0 ]; then
           echo "$(tput setab 1)$(tput setaf 7)Error while enabling $p, reverting your site back. Please check ${ERRORLOG} for more info.$(tput sgr 0)";
           revert_backup;
           exit;
       fi
-    done < ${BASEDIR}/.enable-after-update
+    done < ${BASEDIR}/scripts/update/.enable-after-update
   fi
 }
 
@@ -144,25 +145,18 @@ else
   echo > ${ERRORLOG};
   echo -e "$(tput setaf 2)Preparing backups.$(tput sgr 0)";
   backup;
-  echo -e "$(tput setaf 2)Updating drupal core to latest.$(tput sgr 0)";
-  echo -e "$(tput setaf 2)Updating drupal core to latest.$(tput sgr 0)" >> ${ERRORLOG};
-  cd ${BASEDIR}/${DRUPALPATH};
-  echo -e "$(tput setaf 2)Downloading needed modules before update.$(tput sgr 0)";
-  echo -e "$(tput setaf 2)Downloading needed modules before update.$(tput sgr 0)" >> ${ERRORLOG};
-  download_before_update;
-  $DRUSH up drupal --pm-force --yes --strict=0 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
-  result="$?";
-  if [ "$result" -ne 0 ]; then
-      echo -e "$(tput setab 1)$(tput setaf 7)There was and error while updating drupal core please check ${ERRORLOG} file for more information$(tput sgr 0)";
-      echo -e "$(tput setab 1)$(tput setaf 7)Reverting Backup!.$(tput sgr 0)";
-      revert_backup;
-      exit;
-  fi
-  cd "${BASEDIR}";
-  echo -e "$(tput setaf 2)Updating drupal core is done.$(tput sgr 0)";
-  echo -e "$(tput setaf 2)Updating drupal core is done.$(tput sgr 0)" >> ${ERRORLOG};
   echo -e "$(tput setaf 2)Cleanup & Update composer.json to prepare for varbase update.$(tput sgr 0)";
   echo -e "$(tput setaf 2)Cleanup & Update composer.json to prepare for varbase update.$(tput sgr 0)" >> ${ERRORLOG};
+  if [ -d ${BASEDIR}/vendor/drupal-composer ]; then
+    rm -rf ${BASEDIR}/vendor/drupal-composer;
+  fi
+  if [ -d ${BASEDIR}/${DRUPALPATH}/vendor ]; then
+    rm -rf ${BASEDIR}/${DRUPALPATH}/vendor;
+  fi
+  if [ -f ${BASEDIR}/${DRUPALPATH}/composer.json ]; then
+    rm -rf ${BASEDIR}/${DRUPALPATH}/composer.json;
+  fi
+  composer dump-autoload;
   composer run-script varbase-composer-generate > ${BASEDIR}/composer.new.json;
   result="$?";
   if [ "$result" -ne 0 ]; then
@@ -174,20 +168,22 @@ else
       exit;
   fi
   mv ${BASEDIR}/composer.new.json ${BASEDIR}/composer.json;
-
-  echo -e "$(tput setaf 2)Updating varbase to latest.$(tput sgr 0)";
-  echo -e "$(tput setaf 2)Updating varbase to latest.$(tput sgr 0)" >> ${ERRORLOG};
+  cd ${BASEDIR}/${DRUPALPATH};
+  echo -e "$(tput setaf 2)Downloading needed modules before update.$(tput sgr 0)";
+  echo -e "$(tput setaf 2)Downloading needed modules before update.$(tput sgr 0)" >> ${ERRORLOG};
+  download_before_update;
+  # $DRUSH up drupal --pm-force --yes --strict=0 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
+  # result="$?";
+  # if [ "$result" -ne 0 ]; then
+  #     echo -e "$(tput setab 1)$(tput setaf 7)There was and error while updating drupal core please check ${ERRORLOG} file for more information$(tput sgr 0)";
+  #     echo -e "$(tput setab 1)$(tput setaf 7)Reverting Backup!.$(tput sgr 0)";
+  #     revert_backup;
+  #     exit;
+  # fi
+  cd "${BASEDIR}";
+  echo -e "$(tput setaf 2)Updating varbase.$(tput sgr 0)";
+  echo -e "$(tput setaf 2)Updating varbase.$(tput sgr 0)" >> ${ERRORLOG};
   composer update 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
-  composer update 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
-  composer update 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
-  result="$?";
-  if [ "$result" -ne 0 ]; then
-      echo -e "$(tput setab 1)$(tput setaf 7)There was and error while Updating varbase to latest please check ${ERRORLOG} file for more information$(tput sgr 0)";
-      echo -e "$(tput setab 1)$(tput setaf 7)Reverting Backup!.$(tput sgr 0)";
-      revert_backup;
-      exit;
-  fi
-  composer drupal-scaffold 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
   result="$?";
   if [ "$result" -ne 0 ]; then
       echo -e "$(tput setab 1)$(tput setaf 7)There was and error while Updating varbase to latest please check ${ERRORLOG} file for more information$(tput sgr 0)";
@@ -198,8 +194,8 @@ else
 
   copy_after_update;
 
-  cd ${BASEDIR}/${DRUPALPATH};
   remove_drush;
+  cd ${BASEDIR}/${DRUPALPATH};
   $DRUSH cr --strict=0 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
   result="$?";
   if [ "$result" -ne 0 ]; then
@@ -223,5 +219,6 @@ else
 
   echo "$(tput setaf 2)Update is done!$(tput sgr 0)";
   echo "$(tput setaf 2)Update is done!$(tput sgr 0)" >> ${ERRORLOG};
+  cd ${BASEDIR};
   reset_drush;
 fi
