@@ -285,7 +285,7 @@ class VarbaseUpdate {
 
 
     if(preg_match('/8\.4/', $varbaseVersion) || preg_match('/8\.5/', $varbaseVersion)){
-
+      $crucialPackages["drupal/page_manager"] = ["name"=> "drupal/page_manager", "version" => "4.0-beta3"];
       if(preg_match('/8\.4\.28/', $varbaseVersion) || preg_match('/8\.5/', $varbaseVersion)){
         $varbaseLinkConstraint = new Constraint(">=", "8.6.2");
         $varbaseLinkConstraint->setPrettyString("~8.6.2");

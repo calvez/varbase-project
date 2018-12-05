@@ -109,7 +109,7 @@ if (!file_exists(getcwd().'/bin')) {
 
 get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/composer/VarbaseUpdate.php", getcwd().'/scripts/composer/', 'VarbaseUpdate.php');
 get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/update/update-varbase.sh", getcwd().'/scripts/update/', 'update-varbase.sh');
-
+get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/update/version-check.php", getcwd().'/scripts/update/', 'version-check.php');
 //only download them if they don't exist
 if (!file_exists(getcwd().'/scripts/update/tags.json')) {
     get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/update/tags.json", getcwd().'/scripts/update/', 'tags.json');
@@ -135,6 +135,7 @@ if (!file_exists(getcwd().'/scripts/update/.skip-update')) {
 
 chmod(getcwd().'/bin/drush8', 0755);
 chmod(getcwd().'/scripts/update/update-varbase.sh', 0755);
+chmod(getcwd().'/scripts/update/version-check.php', 0755);
 chmod(getcwd().'/scripts/composer/VarbaseUpdate.php', 0755);
 
 if(file_put_contents($path, $jsondata)) {
