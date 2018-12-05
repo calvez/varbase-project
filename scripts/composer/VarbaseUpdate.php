@@ -38,6 +38,7 @@ class VarbaseUpdate {
     $paths = [];
     $projectExtras = $package->getExtra();
 
+    $paths["composerPath"] = VarbaseUpdate::getDrupalRoot(getcwd(), "");
     $paths["rootPath"] = "docroot";
     if(isset($projectExtras["install-path"])){
       $paths["rootPath"] = $projectExtras["install-path"];
@@ -296,11 +297,17 @@ class VarbaseUpdate {
         $crucialPackages["drupal/video_embed_media"] = ["name"=> "drupal/video_embed_field", "version" => "2.0"];
         $crucialPackages["drupal/media_entity"] = ["name"=> "drupal/media_entity", "version" => "2.0-beta3"];
         $crucialPackages["drupal/panelizer"] = ["name"=> "drupal/panelizer", "version" => "4.1"];
+
+        $enableAfterUpdatePath = $paths["composerPath"] . "scripts/update/.enable-after-update";
+        file_put_contents($enableAfterUpdatePath, "entity_browser_generic_embed".PHP_EOL);
       }else{
         $varbaseLinkConstraint = new Constraint("=", "8.4.28");
         $varbaseLinkConstraint->setPrettyString("8.4.28");
         $varbaseLink = new Link("vardot/varbase-project", "vardot/varbase", $varbaseLinkConstraint , "", "8.4.28");
         $requiredPackageLinks = ["vardot/varbase" => $varbaseLink];
+
+        $enableAfterUpdatePath = $paths["composerPath"] . "scripts/update/.enable-after-update";
+        file_put_contents($enableAfterUpdatePath, "");
       }
 
       $sripts = [

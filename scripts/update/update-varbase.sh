@@ -147,6 +147,12 @@ else
   backup;
   echo -e "$(tput setaf 2)Cleanup & Update composer.json to prepare for varbase update.$(tput sgr 0)";
   echo -e "$(tput setaf 2)Cleanup & Update composer.json to prepare for varbase update.$(tput sgr 0)" >> ${ERRORLOG};
+  if [ -d ${BASEDIR}/vendor/drupal-composer/drupal-scaffold ]; then
+    rm -rf ${BASEDIR}/vendor/drupal-composer/drupal-scaffold;
+  fi
+  if [ -d ${BASEDIR}/vendor/cweagans/composer-patches ]; then
+    rm -rf ${BASEDIR}/vendor/cweagans/composer-patches;
+  fi
   if [ -d ${BASEDIR}/vendor/drupal-composer ]; then
     rm -rf ${BASEDIR}/vendor/drupal-composer;
   fi
@@ -155,6 +161,12 @@ else
   fi
   if [ -f ${BASEDIR}/${DRUPALPATH}/composer.json ]; then
     rm -rf ${BASEDIR}/${DRUPALPATH}/composer.json;
+  fi
+  if [ -f ${BASEDIR}/${DRUPALPATH}/composer.lock ]; then
+    rm -rf ${BASEDIR}/${DRUPALPATH}/composer.lock;
+  fi
+  if [ -f ${BASEDIR}/scripts/composer/ScriptHandler.php ]; then
+    rm -rf ${BASEDIR}/scripts/composer/ScriptHandler.php;
   fi
   composer dump-autoload;
   composer run-script varbase-composer-generate > ${BASEDIR}/composer.new.json;
