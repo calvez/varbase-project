@@ -111,8 +111,8 @@ get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/
 get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/update/update-varbase.sh", getcwd().'/scripts/update/', 'update-varbase.sh');
 
 //only download them if they don't exist
-if (!file_exists(getcwd().'/tags.json')) {
-    get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/tags.json", '', 'tags.json');
+if (!file_exists(getcwd().'/scripts/update/tags.json')) {
+    get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/update/tags.json", getcwd().'/scripts/update/', 'tags.json');
 }
 if (!file_exists(getcwd().'/drush/policy.drush.inc')) {
     get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/drush/policy.drush.inc", getcwd().'/drush/', 'policy.drush.inc');
