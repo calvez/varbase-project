@@ -7,7 +7,7 @@ function get_file($url, $local_path, $newfilename)
     echo "\n";
     $out = fopen($local_path.$newfilename,"wrxb");
     if ($out == FALSE){
-      print "File not opened<br>";
+      print "File not opened.<br>";
       exit;
     }
 
@@ -25,12 +25,13 @@ function get_file($url, $local_path, $newfilename)
 
 }//end function
 
-echo "Varbase-project updater started!\n";
+echo "Starting varbase-project updater!\n";
 
 $path = getcwd()."/composer.json";
 if(!file_exists($path)){
   echo "\n";
   echo "Please run this command from your varbase-project root directory";
+  echo "\n";
   exit;
 }
 $string = file_get_contents(getcwd()."/composer.json");
@@ -39,12 +40,14 @@ $json=json_decode($string,true);
 if(isset($json["name"]) && $json["name"] != "vardot/varbase-project"){
   echo "\n";
   echo "Please run this command from your varbase-project root directory";
+  echo "\n";
   exit;
 }
 
 if(!isset($json["name"])){
   echo "\n";
   echo "Please run this command from your varbase-project root directory";
+  echo "\n";
   exit;
 }
 
@@ -78,7 +81,7 @@ if (file_exists(getcwd().'/web')) {
   $drupalPath = "web";
 }
 
-echo "Drupal root set to " . $drupalPath . " if your drupal root is differnet than this, please change install-path inside composer.json under extra section.\n";
+echo "Drupal root set to " . $drupalPath . " if your Drupal root is different than this, please change install-path inside your composer.json under the 'extra' section.\n";
 
 if(!isset($json["extra"])){
   $json["extra"] = [
@@ -140,6 +143,6 @@ chmod(getcwd().'/scripts/composer/VarbaseUpdate.php', 0755);
 
 if(file_put_contents($path, $jsondata)) {
   echo "varbase-project successfully updated.\n";
-  echo "Now you can run ./scripts/update/update-varbase.sh to update varbase to latest version.\n";
-  echo "Thank you.\n";
+  echo "Now you can run ./scripts/update/update-varbase.sh to update Varbase to the latest version.\n";
+  echo "Enjoy!\n";
 }
