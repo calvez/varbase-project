@@ -6,7 +6,7 @@ if [ -d "${BASEDIR}/web" ]; then
   DRUPALPATH='web';
 fi
 DRUSH="${BASEDIR}/bin/drush8";
-echo "$(tput setaf 1)Please enter your drupal installation folder ($DRUPALPATH): $(tput sgr 0)";
+echo "$(tput setaf 1)Please choose your Drupal installation folder. Type the folder name or hit enter to choose the default one: ($DRUPALPATH): $(tput sgr 0)";
 read drupalfolder;
 
 if [ "$drupalfolder" ] ;then
@@ -24,7 +24,7 @@ backup () {
   ${DRUSH} sql-dump --result-file=${BASEDIR}/update_backups/database/db.sql 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
   result="$?";
   if [ "$result" -ne 0 ]; then
-      echo "$(tput setab 1)$(tput setaf 7)Backup failed exiting update process pelase check ${ERRORLOG} for more info$(tput sgr 0)";
+      echo "$(tput setab 1)$(tput setaf 7)Error in creating a backup, exiting update process! Please check ${ERRORLOG} for more info.$(tput sgr 0)";
       cd ${BASEDIR};
       exit;
   fi
@@ -43,17 +43,17 @@ revert_backup () {
   $DRUSH sql-cli < ${BASEDIR}/update_backups/database/db.sql --yes 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
   result="$?";
   if [ "$result" -ne 0 ]; then
-      echo "$(tput setab 1)$(tput setaf 7)Backup revert failed pelase check ${ERRORLOG} for more info, you can find the backups under ${BASEDIR}/update_backups.$(tput sgr 0)";
+      echo "$(tput setab 1)$(tput setaf 7)Failed to restore the backup. Please check ${ERRORLOG} for more info. You can find the backup to restore it manually in ${BASEDIR}/update_backups$(tput sgr 0)";
       exit;
   fi
   cd ${BASEDIR};
 }
 
 exit_and_revert(){
-  echo "$(tput setaf 1)Do you want to exit the update process and revert back? (no): $(tput sgr 0)";
+  echo "$(tput setaf 1)Would you like to abort the update process and restore the backup? (no): $(tput sgr 0)";
   read answer;
   if [ "$answer" != "${answer#[Yy]}" ] ;then
-    echo -e "$(tput setab 1)$(tput setaf 7)Reverting Backup!.$(tput sgr 0)";
+    echo -e "$(tput setab 1)$(tput setaf 7)Going back in time and restoring the snapshot before the update process!$(tput sgr 0)";
     revert_backup;
     exit;
   fi
@@ -114,7 +114,7 @@ download_before_update(){
       $DRUSH up $p --pm-force --yes --strict=0 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
       result="$?";
       if [ "$result" -ne 0 ]; then
-          echo "$(tput setab 1)$(tput setaf 7)Error while downloading $p, Please check ${ERRORLOG} for more info.$(tput sgr 0)";
+          echo "$(tput setab 1)$(tput setaf 7)Error while downloading $p. Please check ${ERRORLOG} for more info.$(tput sgr 0)";
           exit_and_revert;
       fi
     done < ${BASEDIR}/scripts/update/.download-before-update
@@ -145,12 +145,13 @@ enable_after_update(){
 }
 
 echo "";
-echo "$(tput setaf 4)Welcome to varbase updater:$(tput sgr 0)";
+echo "$(tput setaf 4)Welcome to Varbase Updater:$(tput sgr 0)";
 echo "";
 php ${BASEDIR}/scripts/update/version-check.php current-message ${BASEDIR}/composer.json;
-echo "$(tput setaf 2)This command will guide you to update varbase$(tput sgr 0)";
+echo "$(tput setaf 2)This command will guide you to update your Varbase project.$(tput sgr 0)";
 echo "";
-echo "$(tput setab 214)$(tput setaf 0)This proccess will update your drupal core & modules so please run it on development environment before running on live environment$(tput sgr 0)";
+echo "$(tput setab 214)$(tput setaf 0)The update process will go through several tasks to update your Drupal core and modules. Please run this script on a development environment.$(tput sgr 0)";
+echo -e "$(tput setaf 2) \t$(tput sgr 0)";
 echo "$(tput setaf 2)The command will go through the follwing steps:$(tput sgr 0)";
 echo -e "$(tput setaf 2) \t 1. Update drupal core to latest (drush up drupal).$(tput sgr 0)";
 echo -e "$(tput setaf 2) \t 2. Cleanup & Update composer.json to prepare for varbase update.$(tput sgr 0)";
@@ -158,41 +159,42 @@ echo -e "$(tput setaf 2) \t 3. Update varbase to latest using (composer update).
 echo -e "$(tput setaf 2) \t 4. Enable some required modules for latest varbase.$(tput sgr 0)";
 echo -e "$(tput setaf 2) \t 5. Updating the database for latest changes (drush updb).$(tput sgr 0)";
 echo -e "$(tput setaf 2) \t 6. Cleaning up.$(tput sgr 0)";
-echo "$(tput setab 214)$(tput setaf 0)This proccess will update your drupal core & modules so please run it on development environment before running on live environment$(tput sgr 0)";
+echo -e "$(tput setaf 2) \t$(tput sgr 0)";
+echo "$(tput setab 214)$(tput setaf 0)The update process will go through several tasks to update your Drupal core and modules. Please run this script on a development environment.environment$(tput sgr 0)";
 echo "$(tput setaf 1)Do you want to start the update process? (yes): $(tput sgr 0)";
 read answer;
 if [ "$answer" != "${answer#[Nn]}" ] ;then
-  echo "$(tput setaf 2)Exiting update process, Thank you.$(tput sgr 0)"
+  echo "$(tput setaf 2)Mission aborted.$(tput sgr 0)"
 else
   touch ${ERRORLOG};
   echo > ${ERRORLOG};
-  echo -e "$(tput setaf 2)Preparing backups.$(tput sgr 0)";
+  echo -e "$(tput setaf 2)Preparing a backup snapshot before performing updates.$(tput sgr 0)";
   backup;
-  echo -e "$(tput setaf 2)Cleanup & Update composer.json to prepare for varbase update.$(tput sgr 0)";
-  echo -e "$(tput setaf 2)Cleanup & Update composer.json to prepare for varbase update.$(tput sgr 0)" >> ${ERRORLOG};
+  echo -e "$(tput setaf 2)Preparing composer.json for Varbase updates.$(tput sgr 0)";
+  echo -e "$(tput setaf 2)Preparing composer.json for Varbase updates.$(tput sgr 0)" >> ${ERRORLOG};
   cleanup;
   composer run-script varbase-composer-generate > ${BASEDIR}/composer.new.json;
   result="$?";
   if [ "$result" -ne 0 ]; then
-      echo -e "$(tput setab 1)$(tput setaf 7)There was and error while Cleanup & Update composer.json please check ${ERRORLOG} file for more information$(tput sgr 0)";
-      echo -e "$(tput setab 1)$(tput setaf 7)If you are on 4.x/5.x make sure to update varbase-project using the update command: $(tput sgr 0)";
+      echo -e "$(tput setab 1)$(tput setaf 7)There was and error while preparing composer.json for Varbase updates. Please check ${ERRORLOG} for more information.$(tput sgr 0)";
+      echo -e "$(tput setab 1)$(tput setaf 7)If you are running Varbase 8.x-4.x or 8.x-5.x version, make sure to update varbase-project using the update command: $(tput sgr 0)";
       echo -e "$(tput setaf 2)wget -O - -q https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/update/update.php | php$(tput sgr 0)";
       exit_and_revert;
   fi
   mv ${BASEDIR}/composer.new.json ${BASEDIR}/composer.json;
-  echo "$(tput setaf 4)composer.json is updated now, if you want to change some extra information please edit it, and press enter to continue... $(tput sgr 0)";
+  echo "$(tput setaf 4)composer.json has been updated. Now is your chance to perform any manual changes. Please do your changes (if any) then press enter to continue... $(tput sgr 0)";
   read answer;
 
-  echo -e "$(tput setaf 2)Updating varbase.$(tput sgr 0)";
-  echo -e "$(tput setaf 2)Updating varbase.$(tput sgr 0)" >> ${ERRORLOG};
+  echo -e "$(tput setaf 2)Updating Varbase...$(tput sgr 0)";
+  echo -e "$(tput setaf 2)Updating Varbase...$(tput sgr 0)" >> ${ERRORLOG};
   composer update 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
   result="$?";
   if [ "$result" -ne 0 ]; then
-      echo -e "$(tput setab 1)$(tput setaf 7)There was and error while Updating varbase to latest please check ${ERRORLOG} file for more information$(tput sgr 0)";
+      echo -e "$(tput setab 1)$(tput setaf 7)There was and error while updating Varbase to the latest version. Please check ${ERRORLOG} for more information.$(tput sgr 0)";
       exit_and_revert;
   fi
 
-  echo -e "$(tput setaf 2)Getting failed patches, please check failed-patches.txt.$(tput sgr 0)";
+  echo -e "$(tput setaf 2)Creating a log of all failed patches, please check failed-patches.txt after the update process finishes...$(tput sgr 0)";
   grep -i "Could not apply patch! Skipping" ${BASEDIR}/.update-error-log > failed-patches.txt
   copy_after_update;
   cd ${BASEDIR}/${DRUPALPATH};
@@ -202,33 +204,33 @@ else
       echo -e "$(tput setab 1)$(tput setaf 7)Something went wrong while rebuilding the cache (drush cr), this might cause the update to fail.$(tput sgr 0)";
       exit_and_revert;
   fi
-  echo -e "$(tput setaf 2)Enable some required modules for latest varbase.$(tput sgr 0)";
-  echo -e "$(tput setaf 2)Enable some required modules for latest varbase.$(tput sgr 0)" >> ${ERRORLOG};
+  echo -e "$(tput setaf 2)Enabling new required modules for the latest Varbase version...$(tput sgr 0)";
+  echo -e "$(tput setaf 2)Enabling new required modules for the latest Varbase version...$(tput sgr 0)" >> ${ERRORLOG};
   enable_after_update;
 
-  echo -e "$(tput setaf 2)Updating the database for latest changes.$(tput sgr 0)";
-  echo -e "$(tput setaf 2)Updating the database for latest changes.$(tput sgr 0)" >> ${ERRORLOG};
+  echo -e "$(tput setaf 2)Running database updates...$(tput sgr 0)";
+  echo -e "$(tput setaf 2)Running database updates...$(tput sgr 0)" >> ${ERRORLOG};
 
-  echo -e "$(tput setaf 2)Running entity updates.$(tput sgr 0)";
-  echo -e "$(tput setaf 2)Running entity updates.$(tput sgr 0)" >> ${ERRORLOG};
+  echo -e "$(tput setaf 2)Running entity updates...$(tput sgr 0)";
+  echo -e "$(tput setaf 2)Running entity updates...$(tput sgr 0)" >> ${ERRORLOG};
   $DRUSH entity-updates --yes --strict=0 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
   result="$?";
   if [ "$result" -ne 0 ]; then
-      echo -e "$(tput setab 1)$(tput setaf 7)There was and error while updating entities please check ${ERRORLOG} file for more information$(tput sgr 0)";
+      echo -e "$(tput setab 1)$(tput setaf 7)There was and error while updating entities. Please check ${ERRORLOG} for more information.$(tput sgr 0)";
       exit_and_revert;
   fi
 
-  echo -e "$(tput setaf 2)Running database updates.$(tput sgr 0)";
-  echo -e "$(tput setaf 2)Running database updates.$(tput sgr 0)" >> ${ERRORLOG};
+  echo -e "$(tput setaf 2)Running database updates...$(tput sgr 0)";
+  echo -e "$(tput setaf 2)Running database updates...$(tput sgr 0)" >> ${ERRORLOG};
   $DRUSH  updb --yes --strict=0 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
   result="$?";
   if [ "$result" -ne 0 ]; then
-      echo -e "$(tput setab 1)$(tput setaf 7)There was and error while updating drupal core please check ${ERRORLOG} file for more information$(tput sgr 0)";
+      echo -e "$(tput setab 1)$(tput setaf 7)There was and error while updating Drupal core. Please check ${ERRORLOG} for more information.$(tput sgr 0)";
       exit_and_revert;
   fi
 
-  echo "$(tput setaf 2)Update is done!$(tput sgr 0)";
-  echo "$(tput setaf 2)Update is done!$(tput sgr 0)" >> ${ERRORLOG};
+  echo "$(tput setaf 2)Hoya! Updates are now done. We will add a link in the near future for here to link to common issues appearing after updates and how to fix them.$(tput sgr 0)";
+  echo "$(tput setaf 2)Hoya! Updates are now done. We will add a link in the near future for here to link to common issues appearing after updates and how to fix them.$(tput sgr 0)" >> ${ERRORLOG};
   php ${BASEDIR}/scripts/update/version-check.php next-message ${BASEDIR}/composer.json;
   cd ${BASEDIR};
 fi
