@@ -152,15 +152,16 @@ echo "$(tput setaf 2)This command will guide you to update your Varbase project.
 echo "";
 echo "$(tput setab 214)$(tput setaf 0)The update process will go through several tasks to update your Drupal core and modules. Please run this script on a development environment.$(tput sgr 0)";
 echo -e "$(tput setaf 2) \t$(tput sgr 0)";
-echo "$(tput setaf 2)The command will go through the follwing steps:$(tput sgr 0)";
-echo -e "$(tput setaf 2) \t 1. Update drupal core to latest (drush up drupal).$(tput sgr 0)";
-echo -e "$(tput setaf 2) \t 2. Cleanup & Update composer.json to prepare for varbase update.$(tput sgr 0)";
-echo -e "$(tput setaf 2) \t 3. Update varbase to latest using (composer update).$(tput sgr 0)";
-echo -e "$(tput setaf 2) \t 4. Enable some required modules for latest varbase.$(tput sgr 0)";
-echo -e "$(tput setaf 2) \t 5. Updating the database for latest changes (drush updb).$(tput sgr 0)";
-echo -e "$(tput setaf 2) \t 6. Cleaning up.$(tput sgr 0)";
+echo "$(tput setaf 2)The command will go through the following steps:$(tput sgr 0)";
+echo -e "$(tput setaf 2) \t 1. Backup your current installation (code and database)$(tput sgr 0)";
+echo -e "$(tput setaf 2) \t 2. Cleanup and update your composer.json to prepare for Varbase updates$(tput sgr 0)";
+echo -e "$(tput setaf 2) \t 3. Update Varbase using (composer update)$(tput sgr 0)";
+echo -e "$(tput setaf 2) \t 4. Enable some required modules before running Drupal database updates$(tput sgr 0)";
+echo -e "$(tput setaf 2) \t 5. Update entities (drush entity-updates)$(tput sgr 0)";
+echo -e "$(tput setaf 2) \t 5. Update Drupal database for latest changes (drush updatedb)$(tput sgr 0)";
+echo -e "$(tput setaf 2) \t 6. Write log files and perform some cleanups$(tput sgr 0)";
 echo -e "$(tput setaf 2) \t$(tput sgr 0)";
-echo "$(tput setab 214)$(tput setaf 0)The update process will go through several tasks to update your Drupal core and modules. Please run this script on a development environment.environment$(tput sgr 0)";
+echo "$(tput setab 214)$(tput setaf 0)The update process will go through several tasks to update your Drupal core and modules. Please run this script on a development environment.$(tput sgr 0)";
 echo "$(tput setaf 1)Do you want to start the update process? (yes): $(tput sgr 0)";
 read answer;
 if [ "$answer" != "${answer#[Nn]}" ] ;then
@@ -168,10 +169,10 @@ if [ "$answer" != "${answer#[Nn]}" ] ;then
 else
   touch ${ERRORLOG};
   echo > ${ERRORLOG};
-  echo -e "$(tput setaf 2)Preparing a backup snapshot before performing updates.$(tput sgr 0)";
+  echo -e "$(tput setaf 2)Preparing a backup snapshot before performing updates...$(tput sgr 0)";
   backup;
-  echo -e "$(tput setaf 2)Preparing composer.json for Varbase updates.$(tput sgr 0)";
-  echo -e "$(tput setaf 2)Preparing composer.json for Varbase updates.$(tput sgr 0)" >> ${ERRORLOG};
+  echo -e "$(tput setaf 2)Preparing composer.json for Varbase updates...$(tput sgr 0)";
+  echo -e "$(tput setaf 2)Preparing composer.json for Varbase updates...$(tput sgr 0)" >> ${ERRORLOG};
   cleanup;
   composer run-script varbase-composer-generate > ${BASEDIR}/composer.new.json;
   result="$?";
