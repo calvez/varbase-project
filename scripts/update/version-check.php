@@ -10,7 +10,7 @@ $nextVersions = [
 $jsonFile = getcwd() . "/composer.json";
 
 if(sizeof($argv) <= 2){
-  echo "Please provide version type \n";
+  echo "Please provide version type\n";
   exit;
 }
 
@@ -49,9 +49,9 @@ switch ($argv[1]){
       if($currentVersion[0] == $releaseVersion[0] && $currentVersion[1] == $releaseVersion[1]){
         if(version_compare($varbaseVersion, $value["fromVersion"], $value["fromOperator"])){
           if($varbaseVersion == $value["toVersion"]){
-            print "You are on the latest varbase version no update is required \n";
+            print "You are on the latest Varbase version. No updates are required.\n";
           }else{
-            print "Updating varbase (" . $varbaseVersion . ") to varbase (" . $value["toVersion"] . ")\n";
+            print "Updating Varbase (" . $varbaseVersion . ") to Varbase (" . $value["toVersion"] . ")\n";
           }
         }
       }
@@ -66,10 +66,10 @@ switch ($argv[1]){
       if($currentVersion[0] == $releaseVersion[0] && $currentVersion[1] == $releaseVersion[1]){
         if(version_compare($varbaseVersion, $value["fromVersion"], $value["fromOperator"])){
           if($varbaseVersion == $value["toVersion"]){
-            print "You are on the latest varbase version now!\n";
+            print "Congratulations! You are on the latest Varbase version now.\n";
           }else{
-            print "You are on varbase (" . $varbaseVersion . ") a newer version (" . $value["toVersion"] . ") is now available.\n";
-            print "Please run: ./scripts/update/update-varbase.sh to update to varbase (" . $value["toVersion"] . ").\n";
+            print "You are on Varbase (" . $varbaseVersion . "). A newer version (" . $value["toVersion"] . ") is now available.\n";
+            print "Please run: ./scripts/update/update-varbase.sh to update to Varbase (" . $value["toVersion"] . ").\n";
           }
         }
       }
