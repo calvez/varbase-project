@@ -157,7 +157,6 @@ echo -e "$(tput setaf 2) \t 1. Backup your current installation (code and databa
 echo -e "$(tput setaf 2) \t 2. Cleanup and update your composer.json to prepare for Varbase updates$(tput sgr 0)";
 echo -e "$(tput setaf 2) \t 3. Update Varbase using (composer update)$(tput sgr 0)";
 echo -e "$(tput setaf 2) \t 4. Enable some required modules before running Drupal database updates$(tput sgr 0)";
-echo -e "$(tput setaf 2) \t 5. Update entities (drush entity-updates)$(tput sgr 0)";
 echo -e "$(tput setaf 2) \t 5. Update Drupal database for latest changes (drush updatedb)$(tput sgr 0)";
 echo -e "$(tput setaf 2) \t 6. Write log files and perform some cleanups$(tput sgr 0)";
 echo -e "$(tput setaf 2) \t$(tput sgr 0)";
