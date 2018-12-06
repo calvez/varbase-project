@@ -208,18 +208,6 @@ else
 
   echo -e "$(tput setaf 2)Updating the database for latest changes.$(tput sgr 0)";
   echo -e "$(tput setaf 2)Updating the database for latest changes.$(tput sgr 0)" >> ${ERRORLOG};
-
-  echo -e "$(tput setaf 2)Running entity updates.$(tput sgr 0)";
-  echo -e "$(tput setaf 2)Running entity updates.$(tput sgr 0)" >> ${ERRORLOG};
-  $DRUSH entity-updates --yes --strict=0 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
-  result="$?";
-  if [ "$result" -ne 0 ]; then
-      echo -e "$(tput setab 1)$(tput setaf 7)There was and error while updating entities please check ${ERRORLOG} file for more information$(tput sgr 0)";
-      exit_and_revert;
-  fi
-
-  echo -e "$(tput setaf 2)Running database updates.$(tput sgr 0)";
-  echo -e "$(tput setaf 2)Running database updates.$(tput sgr 0)" >> ${ERRORLOG};
   $DRUSH  updb --yes --strict=0 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
   result="$?";
   if [ "$result" -ne 0 ]; then
