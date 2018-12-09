@@ -1,4 +1,8 @@
 #!/bin/bash
+function clear_stdin(){
+    while read -e -t 1; do : ; done
+}
+
 BASEDIR=$(PWD);
 ERRORLOG=${BASEDIR}/.update-error-log;
 DRUPALPATH='docroot';
@@ -6,52 +10,78 @@ if [ -d "${BASEDIR}/web" ]; then
   DRUPALPATH='web';
 fi
 DRUSH="${BASEDIR}/bin/drush8";
+clear;
+echo "$(tput setaf 4)";
+cat << "EOF"
+ __   __  _______  ______    __   __  _______
+|  | |  ||   _   ||    _ |  |  | |  ||       |
+|  |_|  ||  |_|  ||   | ||  |  | |  ||    _  |
+|       ||       ||   |_||_ |  |_|  ||   |_| |
+|       ||       ||    __  ||       ||    ___|
+ |     | |   _   ||   |  | ||       ||   |
+  |___|  |__| |__||___|  |_||_______||___|
+EOF
+echo "$(tput setaf 4)Varbase Updater$(tput sgr 0)";
+echo "";
+clear_stdin;
 echo "$(tput setaf 1)Please choose your Drupal installation folder. Type the folder name or hit enter to choose the default one: ($DRUPALPATH): $(tput sgr 0)";
 read drupalfolder;
-
 if [ "$drupalfolder" ] ;then
   DRUPALPATH=$drupalfolder;
 fi;
 
 backup () {
+  cd ${BASEDIR};
   rm -rf ${BASEDIR}/update_backups;
-  mkdir -p ${BASEDIR}/update_backups/${DRUPALPATH};
-  mkdir -p ${BASEDIR}/update_backups/database;
-  cp -r ${BASEDIR}/${DRUPALPATH} ${BASEDIR}/update_backups/;
-  cp -r ${BASEDIR}/vendor ${BASEDIR}/update_backups/;
+  mkdir -p ${BASEDIR}/update_backups
+  tar --exclude='sites' -zcf ./update_backups/${DRUPALPATH}.tgz ./${DRUPALPATH}
+  tar -zcf ./update_backups/vendor.tgz ./vendor
   cp ${BASEDIR}/composer.json ${BASEDIR}/update_backups/composer.json;
   cd ${BASEDIR}/${DRUPALPATH};
-  ${DRUSH} sql-dump --result-file=${BASEDIR}/update_backups/database/db.sql 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
+  ${DRUSH} sql-dump --result-file=${BASEDIR}/update_backups/db.sql 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
   result="$?";
   if [ "$result" -ne 0 ]; then
       echo "$(tput setab 1)$(tput setaf 7)Error in creating a backup, exiting update process! Please check ${ERRORLOG} for more info.$(tput sgr 0)";
       cd ${BASEDIR};
       exit;
   fi
+  mkdir -p ${BASEDIR}/update_backups/skip
+  if [ -f ${BASEDIR}/scripts/update/.skip-update ]; then
+    while read p; do
+      if [ -d "${BASEDIR}/${DRUPALPATH}/modules/contrib/${p}" ]; then
+        cp -r ${BASEDIR}/${DRUPALPATH}/modules/contrib/${p} ${BASEDIR}/update_backups/skip/;
+      fi
+    done < ${BASEDIR}/scripts/update/.skip-update
+  fi
   cd ${BASEDIR};
 }
 
 revert_backup () {
   cd ${BASEDIR}
+  rm -rf mv ${BASEDIR}/update_backups/sites
+  mv ${BASEDIR}/${DRUPALPATH}/sites ${BASEDIR}/update_backups/
   rm -rf ${BASEDIR}/${DRUPALPATH}
-  cp -r ${BASEDIR}/update_backups/${DRUPALPATH} ${BASEDIR}/
-  rm -rf ${BASEDIR}/vendor/*
-  cp -r ${BASEDIR}/update_backups/vendor ${BASEDIR}/;
+  tar -xf ./update_backups/${DRUPALPATH}.tgz
+  mv ${BASEDIR}/update_backups/sites ${BASEDIR}/${DRUPALPATH}/
+  rm -rf ${BASEDIR}/vendor
+  tar -xf ./update_backups/vendor.tgz
   cp ${BASEDIR}/update_backups/composer.json ${BASEDIR}/composer.json;
   cd ${BASEDIR}/${DRUPALPATH};
   $DRUSH sql-drop --yes 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
-  $DRUSH sql-cli < ${BASEDIR}/update_backups/database/db.sql --yes 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
+  $DRUSH sql-cli < ${BASEDIR}/update_backups/db.sql --yes 1> >(tee -a ${ERRORLOG} >&1) 2> >(tee -a ${ERRORLOG} >&2);
   result="$?";
   if [ "$result" -ne 0 ]; then
       echo "$(tput setab 1)$(tput setaf 7)Failed to restore the backup. Please check ${ERRORLOG} for more info. You can find the backup to restore it manually in ${BASEDIR}/update_backups$(tput sgr 0)";
       exit;
   fi
   cd ${BASEDIR};
+  rm -rf ${BASEDIR}/update_backups;
 }
 
 exit_and_revert(){
+  clear_stdin;
   echo "$(tput setaf 1)Would you like to abort the update process and restore the backup? (no): $(tput sgr 0)";
-  read answer;
+  read answer </dev/tty;
   if [ "$answer" != "${answer#[Yy]}" ] ;then
     echo -e "$(tput setab 1)$(tput setaf 7)Going back in time and restoring the snapshot before the update process!$(tput sgr 0)";
     revert_backup;
@@ -81,31 +111,6 @@ cleanup(){
   composer dump-autoload;
 }
 
-remove_drush(){
-  echo ${BASEDIR}/bin/drush8 > ${BASEDIR}/${DRUPALPATH}/.drush-use;
-  if [ -d "${BASEDIR}/vendor/drush" ]; then
-    if [ -d "${BASEDIR}/vendor/drush_b" ]; then
-      rm -rf ${BASEDIR}/vendor/drush_b;
-    fi
-    mv ${BASEDIR}/vendor/drush ${BASEDIR}/vendor/drush_b;
-  fi
-  composer dump-autoload;
-}
-
-reset_drush(){
-  rm ${BASEDIR}/${DRUPALPATH}/.drush-use;
-  if [ -d "${BASEDIR}/vendor/drush" ]; then
-    if [ -d "${BASEDIR}/vendor/drush_b" ]; then
-          rm -rf ${BASEDIR}/vendor/drush_b;
-    fi
-  else
-    if [ -d "${BASEDIR}/vendor/drush_b" ]; then
-      mv ${BASEDIR}/vendor/drush_b ${BASEDIR}/vendor/drush;
-    fi
-  fi
-  composer dump-autoload;
-}
-
 download_before_update(){
   if [ -f ${BASEDIR}/scripts/update/.download-before-update ]; then
     while read p; do
@@ -124,8 +129,8 @@ download_before_update(){
 copy_after_update(){
   if [ -f ${BASEDIR}/scripts/update/.skip-update ]; then
     while read p; do
-      if [ -d "${BASEDIR}/update_backups/${DRUPALPATH}/modules/contrib/${p}" ]; then
-        cp -r ${BASEDIR}/update_backups/${DRUPALPATH}/modules/contrib/${p} ${BASEDIR}/${DRUPALPATH}/modules/contrib/;
+      if [ -d "${BASEDIR}/update_backups/skip/${p}" ]; then
+        cp -r ${BASEDIR}/update_backups/skip/${p} ${BASEDIR}/${DRUPALPATH}/modules/contrib/;
       fi
     done < ${BASEDIR}/scripts/update/.skip-update
   fi
@@ -144,10 +149,9 @@ enable_after_update(){
   fi
 }
 
-echo "";
-echo "$(tput setaf 4)Welcome to Varbase Updater:$(tput sgr 0)";
-echo "";
+echo "$(tput setab 2)";
 php ${BASEDIR}/scripts/update/version-check.php current-message ${BASEDIR}/composer.json;
+echo "$(tput sgr 0)";
 echo "$(tput setaf 2)This command will guide you to update your Varbase project.$(tput sgr 0)";
 echo "";
 echo "$(tput setab 214)$(tput setaf 0)The update process will go through several tasks to update your Drupal core and modules. Please run this script on a development environment.$(tput sgr 0)";
@@ -162,11 +166,30 @@ echo -e "$(tput setaf 2) \t 5. Update Drupal database for latest changes (drush 
 echo -e "$(tput setaf 2) \t 6. Write log files and perform some cleanups$(tput sgr 0)";
 echo -e "$(tput setaf 2) \t$(tput sgr 0)";
 echo "$(tput setab 214)$(tput setaf 0)The update process will go through several tasks to update your Drupal core and modules. Please run this script on a development environment.$(tput sgr 0)";
-echo "$(tput setaf 1)Do you want to start the update process? (yes): $(tput sgr 0)";
-read answer;
-if [ "$answer" != "${answer#[Nn]}" ] ;then
-  echo "$(tput setaf 2)Mission aborted.$(tput sgr 0)"
+clear_stdin;
+if [ -d ${BASEDIR}/update_backups ]; then
+  echo -e "$(tput setaf 1)What would you like to do?: $(tput sgr 0)";
+  echo -e "$(tput setaf 1)- (u|update) To start the update process (default). $(tput sgr 0)"
+  echo -e "$(tput setaf 1)- (r|revert) To revert the previews backup.$(tput sgr 0)";
+  echo -e "$(tput setaf 1)- (e|exit) To exit.$(tput sgr 0)";
 else
+  echo -e "$(tput setaf 1)Do you want to start the update process? (yes): $(tput sgr 0)";
+fi
+read answer;
+answer=${answer:-Yes}
+if [ "$answer" != "${answer#[NnEe]}" ] ;then
+  echo "$(tput setaf 2)Mission aborted.$(tput sgr 0)";
+  exit;
+elif [ "$answer" != "${answer#[Rr]}" ] ; then
+  if [ -d ${BASEDIR}/update_backups ]; then
+    echo "$(tput setaf 2)Reverting backup.$(tput sgr 0)";
+    revert_backup;
+    exit;
+  else
+     echo "$(tput setaf 2)Sorry there is no backup to revert!.$(tput sgr 0)";
+     exit;
+  fi
+elif [ "$answer" != "${answer#[YyUu]}" ] ; then
   touch ${ERRORLOG};
   echo > ${ERRORLOG};
   echo -e "$(tput setaf 2)Preparing a backup snapshot before performing updates...$(tput sgr 0)";
@@ -183,6 +206,7 @@ else
       exit_and_revert;
   fi
   mv ${BASEDIR}/composer.new.json ${BASEDIR}/composer.json;
+  clear_stdin;
   echo "$(tput setaf 4)composer.json has been updated. Now is your chance to perform any manual changes. Please do your changes (if any) then press enter to continue... $(tput sgr 0)";
   read answer;
 
@@ -222,4 +246,7 @@ else
   echo "$(tput setaf 2)Hoya! Updates are now done. We will add a link in the near future for here to link to common issues appearing after updates and how to fix them.$(tput sgr 0)" >> ${ERRORLOG};
   php ${BASEDIR}/scripts/update/version-check.php next-message ${BASEDIR}/composer.json;
   cd ${BASEDIR};
+else
+  echo "$(tput setaf 2)Unrecognized option, exiting...$(tput sgr 0)";
+  exit;
 fi

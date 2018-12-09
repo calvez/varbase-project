@@ -123,9 +123,6 @@ if (!file_exists(getcwd().'/drush/policy.drush.inc')) {
 if (!file_exists(getcwd().'/drush/README.md')) {
     get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/drush/README.md", getcwd().'/drush/', 'README.md');
 }
-if (!file_exists(getcwd().'/bin/drush8')) {
-    get_file("https://github.com/drush-ops/drush/releases/download/8.1.18/drush.phar", getcwd().'/bin/', 'drush8');
-}
 if (!file_exists(getcwd().'/scripts/update/.download-before-update')) {
   get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/update/.download-before-update", getcwd().'/scripts/update/', '.download-before-update');
 }
@@ -136,7 +133,6 @@ if (!file_exists(getcwd().'/scripts/update/.skip-update')) {
   get_file("https://raw.githubusercontent.com/Vardot/varbase-project/8.6.x-update/scripts/update/.skip-update", getcwd().'/scripts/update/', '.skip-update');
 }
 
-chmod(getcwd().'/bin/drush8', 0755);
 chmod(getcwd().'/scripts/update/update-varbase.sh', 0755);
 chmod(getcwd().'/scripts/update/version-check.php', 0755);
 chmod(getcwd().'/scripts/composer/VarbaseUpdate.php', 0755);
@@ -145,4 +141,7 @@ if(file_put_contents($path, $jsondata)) {
   echo "varbase-project successfully updated.\n";
   echo "Now you can run ./scripts/update/update-varbase.sh to update Varbase to the latest version.\n";
   echo "Enjoy!\n";
+}else{
+  echo "Error while updating varbase-project.\n";
+  echo ":(\n";
 }
