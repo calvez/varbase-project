@@ -37,7 +37,7 @@ if(!file_exists($path)){
 $string = file_get_contents(getcwd()."/composer.json");
 $json=json_decode($string,true);
 
-if(isset($json["name"]) && $json["name"] != "vardot/varbase-project"){
+if(isset($json["name"]) && ($json["name"] != "vardot/varbase-project" || $json["name"] != "vardot/varbase-build"))) {
   echo "\n";
   echo "Please run this command from your varbase-project root directory";
   echo "\n";
