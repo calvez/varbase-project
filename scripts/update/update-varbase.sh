@@ -9,7 +9,7 @@ DRUPALPATH='docroot';
 if [ -d "${BASEDIR}/web" ]; then
   DRUPALPATH='web';
 fi
-DRUSH="${BASEDIR}/bin/drush8";
+DRUSH="drush";
 clear;
 echo "$(tput setaf 4)";
 cat << "EOF"
