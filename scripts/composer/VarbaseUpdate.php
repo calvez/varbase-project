@@ -330,6 +330,11 @@ class VarbaseUpdate {
         "url" => "https://asset-packagist.org"
       ];
 
+      $repos["composer-patches"] = [
+        "type" => "vcs",
+        "url" => "https://github.com/waleedq/composer-patches"
+      ];
+
 
       $extras["installer-paths"][$paths["rootPath"].'/libraries/{$name}'] = ["type:bower-asset", "type:npm-asset"];
       $extras["installer-paths"][$paths["rootPath"]."/libraries/slick"] = ["npm-asset/slick-carousel"];
